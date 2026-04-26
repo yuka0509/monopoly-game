@@ -215,6 +215,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:tup 0.3s ease-out;pointer-events:none}
 @keyframes tup{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
+/* ── CELL RENT TABLE ── */
+.crt{width:100%;margin-top:1px;border-top:0.5px solid rgba(255,255,255,0.1)}
+.crth{display:flex;justify-content:space-between;padding:0 2px;font-size:3.5px;color:var(--text3);line-height:1.3}
+.crtr{display:flex;justify-content:space-between;padding:0 2px;font-size:4.5px;color:var(--text2);line-height:1.3}
+.crtr.act{color:var(--accent);font-weight:700}
+
 /* ── WAITING / NOT MY TURN ── */
 .waiting-overlay{text-align:center;padding:12px 8px;color:var(--text2);font-size:12px}
 .spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);
@@ -1134,6 +1140,18 @@ function drawBoard(){
     else if(cell.t==='community')in2+=`<div style="font-size:9px">📋</div>`;
     else{
       in2+=`<div class="cn">${lab(idx)}</div><div class="cp">${cell.p}万</div>`;
+      if(cell.t==='prop'){
+        const bc=Math.floor(cell.p/2);
+        in2+='<div class="crt"><div class="crth"><span></span><span>費用</span><span>家賃</span></div>';
+        ['1','2','3','4','H'].forEach((lbl,i)=>{const lv=i+1;in2+=`<div class="crtr${pr.h===lv?' act':''}"><span>${lbl}件</span><span>${bc*lv}万</span><span>${cell.r[lv]}万</span></div>`;});
+        in2+='</div>';
+      }else if(cell.t==='railroad'){
+        in2+='<div class="crt">';
+        for(let lv=0;lv<4;lv++)in2+=`<div class="crtr"><span>${lv+1}駅</span><span>${cell.r[lv]}万</span></div>`;
+        in2+='</div>';
+      }else if(cell.t==='utility'){
+        in2+='<div class="crt"><div class="crtr"><span>1社</span><span>目×40</span></div><div class="crtr"><span>2社</span><span>目×100</span></div></div>';
+      }
       if(pr.h>0){in2+='<div class="ivd">';if(pr.h===5)in2+=`<div class="ip ht"></div>`;else for(let x=0;x<pr.h;x++)in2+=`<div class="ip h"></div>`;in2+='</div>';}
     }
     if(pr.own>=0)in2+=`<div class="om" style="background:${G.players[pr.own].color}"></div>`;
