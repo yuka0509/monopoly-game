@@ -1,10 +1,1205 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>Monopoly Game</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>起業体験モノポリー</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#08090f;--s1:#111218;--s2:#181a24;--s3:#1f2133;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --accent:#00f5a0;--accent-dim:rgba(0,245,160,0.12);--accent-glow:rgba(0,245,160,0.25);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --red:#f87171;--red-dim:rgba(248,113,113,0.12);
+  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.12);
+  --text:#eef0ff;--text2:#6b7299;--text3:#3d4266;
+  --brown:#c07850;--lb:#34d399;--pink:#f472b6;--orange:#fb923c;
+  --color-red:#f87171;--yellow:#f59e0b;--green:#4ade80;--blue:#60a5fa;
+  --rail:#94a3b8;--util:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── VIEWS ── */
+.view{display:none;min-height:100vh}
+.view.active{display:flex}
+#v-auth{align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,245,160,0.06) 0%,transparent 70%)}
+#v-lobby{flex-direction:column}
+#v-room{align-items:center;justify-content:center;padding:20px}
+#v-game{flex-direction:column;height:100vh}
+
+/* ── AUTH ── */
+.auth-wrap{width:100%;max-width:400px}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo-icon{width:72px;height:72px;margin:0 auto 16px;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;
+  box-shadow:0 0 40px var(--accent-glow)}
+.auth-logo h1{font-family:'Syne',sans-serif;font-size:26px;font-weight:900;letter-spacing:-0.02em}
+.auth-logo p{font-size:13px;color:var(--text2);margin-top:4px}
+.auth-card{background:var(--s1);border:1px solid var(--border2);border-radius:16px;padding:24px}
+.tabs{display:flex;background:var(--s2);border-radius:10px;padding:4px;margin-bottom:20px;gap:4px}
+.tab{flex:1;padding:8px;font-size:12px;font-weight:700;font-family:'Noto Sans JP',sans-serif;
+  border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text2);transition:all 0.2s}
+.tab.on{background:var(--s3);color:var(--text)}
+.tp{display:none}.tp.on{display:block}
+.field{margin-bottom:12px}
+.field label{font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.06em;
+  text-transform:uppercase;display:block;margin-bottom:6px}
+.field input{width:100%;padding:10px 14px;border-radius:9px;
+  border:1px solid var(--border2);background:var(--s2);color:var(--text);
+  font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;transition:all 0.2s}
+.field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.field input::placeholder{color:var(--text3)}
+
+/* ── BUTTONS ── */
+.btn{width:100%;padding:11px 16px;font-size:13px;font-weight:700;
+  font-family:'Noto Sans JP',sans-serif;border-radius:10px;cursor:pointer;
+  text-align:center;transition:all 0.15s;border:1px solid transparent;display:block}
+.btn:active{transform:scale(0.97)}
+.btn.cta{background:linear-gradient(135deg,var(--accent),#00c87a);
+  color:#041a10;border-color:transparent;box-shadow:0 4px 20px var(--accent-glow)}
+.btn.cta:hover{filter:brightness(1.08);box-shadow:0 6px 28px var(--accent-glow)}
+.btn.ghost{background:var(--s2);color:var(--text);border-color:var(--border2)}
+.btn.ghost:hover{border-color:var(--border2);background:var(--s3)}
+.btn.amber{background:var(--amber-dim);color:var(--amber);border-color:rgba(251,191,36,0.3)}
+.btn.danger{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3)}
+.xs{display:inline-flex;align-items:center;padding:5px 11px;font-size:11px;font-weight:700;
+  font-family:'Noto Sans JP',sans-serif;border-radius:7px;border:1px solid transparent;cursor:pointer;white-space:nowrap}
+.xs.cta{background:var(--accent);color:#041a10}
+.xs.ghost{background:var(--s3);color:var(--text);border-color:var(--border)}
+.xs.danger{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3)}
+.xs.pur{background:var(--purple-dim);color:var(--purple);border-color:rgba(167,139,250,0.3)}
+
+/* ── LOBBY ── */
+#lobby-hdr{padding:12px 20px;background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lhdr-left{display:flex;align-items:center;gap:10px}
+.lhdr-icon{width:30px;height:30px;background:linear-gradient(135deg,var(--accent),var(--purple));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.lhdr-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:800}
+#lobby-body{display:grid;grid-template-columns:280px 1fr;flex:1;min-height:0;overflow:hidden}
+#lobby-left{border-right:1px solid var(--border);padding:16px;overflow-y:auto;
+  display:flex;flex-direction:column;gap:20px}
+#lobby-right{padding:20px;overflow-y:auto}
+.sec-hdr{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:0.12em;
+  text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.badge-dot{background:var(--red);color:white;font-size:9px;font-weight:700;
+  min-width:16px;height:16px;border-radius:8px;padding:0 4px;
+  display:none;align-items:center;justify-content:center}
+.search-row{display:flex;gap:6px;margin-bottom:8px}
+.search-row input{flex:1;padding:8px 11px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--s2);color:var(--text);font-size:12px;font-family:'Noto Sans JP',sans-serif;outline:none}
+.search-row input:focus{border-color:var(--accent)}
+.f-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)}
+.f-row:last-child{border:none}
+.f-name{flex:1;font-size:12px;font-weight:500}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:white;flex-shrink:0}
+.av.lg{width:32px;height:32px;font-size:14px}
+.av.sm{width:26px;height:26px;font-size:11px}
+.room-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;cursor:pointer;margin-bottom:8px;transition:all 0.15s;
+  display:flex;align-items:center;justify-content:space-between}
+.room-card:hover{border-color:var(--accent);background:var(--s3)}
+.room-name{font-size:13px;font-weight:700}
+.room-meta{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ── ROOM ── */
+.room-box{background:var(--s1);border:1px solid var(--border2);border-radius:16px;
+  padding:28px;width:100%;max-width:420px}
+.room-box-hdr{text-align:center;margin-bottom:24px}
+.room-id-chip{display:inline-block;font-family:'Space Mono',monospace;font-size:11px;
+  padding:4px 10px;border-radius:6px;background:var(--s3);border:1px solid var(--border2);
+  color:var(--text2);margin-top:6px}
+#room-players{display:flex;flex-direction:column;gap:6px;margin-bottom:20px}
+.rp-row{display:flex;align-items:center;gap:10px;padding:8px 12px;
+  background:var(--s2);border-radius:9px;border:1px solid var(--border)}
+.you-tag{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:0.05em;
+  text-transform:uppercase;margin-left:auto}
+
+/* ── GAME ── */
+#ghdr{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+#glayout{display:grid;grid-template-columns:1fr 236px;flex:1;min-height:0;overflow:hidden}
+#board-col{padding:10px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
+  background:var(--bg)}
+#board-wrap{width:100%;max-width:520px}
+#board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);
+  gap:1.5px;background:var(--border);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%}
+.cell{background:var(--s1);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;position:relative;overflow:hidden;transition:background 0.1s}
+.cell.mid{background:var(--bg)}
+.cell.here{background:rgba(0,245,160,0.07)!important}
+.ci{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:1px;width:100%;height:100%;position:relative;z-index:1}
+.cn{font-size:4.5px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 1px}
+.cp{font-size:4px;color:var(--text2)}
+.cs{position:absolute;opacity:0.9}
+.cs.t{top:0;left:0;right:0;height:4px}
+.cs.b{bottom:0;left:0;right:0;height:4px}
+.cs.l{left:0;top:0;bottom:0;width:4px}
+.cs.r{right:0;top:0;bottom:0;width:4px}
+.om{position:absolute;top:3px;left:2px;width:5px;height:5px;border-radius:50%;border:1px solid rgba(255,255,255,0.4)}
+.ivd{display:flex;gap:1px;flex-wrap:wrap;justify-content:center;margin-top:1px}
+.ip{width:3.5px;height:3.5px;border-radius:0.5px}
+.ip.h{background:var(--accent)}
+.ip.ht{background:var(--red)}
+.tok-l{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:flex-end;
+  justify-content:flex-end;padding:1px;gap:0.5px;z-index:5}
+.tok{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:4.5px;
+  font-weight:700;color:white;flex-shrink:0;box-shadow:0 0 4px rgba(0,0,0,0.5)}
+
+/* ── SIDEBAR ── */
+#gsb{background:var(--s1);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+#pp{padding:10px;border-bottom:1px solid var(--border);flex-shrink:0}
+#pcards{display:flex;flex-direction:column;gap:4px}
+.pcard{border-radius:9px;padding:8px 10px;border:1px solid var(--border);background:var(--s2);transition:all 0.15s}
+.pcard.on{border-color:var(--accent);background:rgba(0,245,160,0.05);
+  box-shadow:0 0 0 1px var(--accent-glow)}
+.pcard.bust{opacity:0.3}
+.pcard-t{display:flex;align-items:center;gap:7px}
+.pcard-n{font-size:11px;font-weight:700;line-height:1}
+.pcard-s{font-size:9px;color:var(--text2);margin-top:2px}
+.pcard-m{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;margin-top:5px;line-height:1}
+.pcard-m span{font-size:10px;font-weight:400;color:var(--text2)}
+#ap{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+.alb{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
+#amsg{font-size:12px;line-height:1.6;padding:10px;background:var(--s2);
+  border-radius:9px;border:1px solid var(--border);min-height:48px}
+#amsg b{color:var(--accent)}
+#amsg .neg{color:var(--red)}
+.dr{display:flex;align-items:center;gap:8px;justify-content:center;padding:2px 0}
+.die{width:34px;height:34px;border-radius:8px;background:var(--s2);
+  border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:20px}
+.ds{font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--text2)}
+#abtn{display:flex;flex-direction:column;gap:5px}
+#logbox{border-top:1px solid var(--border);padding-top:8px;margin-top:2px}
+#loglist{font-size:10px;color:var(--text2);line-height:1.7;max-height:64px;overflow-y:auto}
+
+/* ── CHIP ── */
+.chip{font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;letter-spacing:0.04em}
+.chip.buy{background:rgba(0,245,160,0.12);color:var(--accent);border:1px solid var(--accent-glow)}
+.chip.play{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
+.chip.neg{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.3)}
+
+/* ── MODAL ── */
+#mw{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);
+  z-index:9999;display:none;align-items:center;justify-content:center;padding:20px}
+#mw.on{display:flex}
+.modal{background:var(--s1);border:1px solid var(--border2);border-radius:14px;
+  padding:22px;width:100%;max-width:340px;max-height:82vh;overflow-y:auto}
+.modal h2{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;margin-bottom:6px}
+.msub{font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.55}
+.mbtns{display:flex;flex-direction:column;gap:6px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0;max-height:170px;overflow-y:auto}
+.pbtn{padding:6px 7px;font-size:10px;border-radius:7px;border:1px solid var(--border);
+  background:var(--s2);cursor:pointer;font-family:'Noto Sans JP',sans-serif;
+  color:var(--text);text-align:left;transition:all 0.1s}
+.pbtn:hover{border-color:var(--accent);background:var(--accent-dim)}
+.pbtn.sel{border-color:var(--purple);background:var(--purple-dim)}
+.pbtn.dim{opacity:0.3;pointer-events:none}
+.pdt{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:3px;vertical-align:middle}
+.crow{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px;color:var(--text2)}
+.crow input{flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--s2);color:var(--text);font-size:12px;font-family:'Space Mono',monospace;outline:none}
+.crow input:focus{border-color:var(--accent)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border2);border-radius:10px;
+  padding:10px 20px;font-size:13px;font-weight:500;z-index:999;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:tup 0.3s ease-out;pointer-events:none}
+@keyframes tup{from{opacity:0;transform:translateX(-50%) translateY(12px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── WAITING / NOT MY TURN ── */
+.waiting-overlay{text-align:center;padding:12px 8px;color:var(--text2);font-size:12px}
+.spinner{width:20px;height:20px;border:2px solid var(--border2);border-top-color:var(--accent);
+  border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
-  <h1>Coming Soon</h1>
+
+<!-- 認証 -->
+<div id="v-auth" class="view">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">🚀</div>
+      <h1>起業体験モノポリー</h1>
+      <p>アカウントを作成してオンラインで遊ぼう</p>
+    </div>
+    <div class="auth-card">
+      <div class="tabs">
+        <button class="tab on" onclick="swTab('login',this)">ログイン</button>
+        <button class="tab" onclick="swTab('reg',this)">新規登録</button>
+      </div>
+      <div id="tp-login" class="tp on">
+        <div class="field"><label>メールアドレス</label><input id="le" type="email" placeholder="email@example.com"></div>
+        <div class="field"><label>パスワード</label><input id="lp" type="password" placeholder="パスワード"></div>
+        <button class="btn cta" onclick="doLogin()">ログイン</button>
+      </div>
+      <div id="tp-reg" class="tp">
+        <div class="field"><label>ニックネーム</label><input id="rn" type="text" placeholder="ゲーム内で表示される名前"></div>
+        <div class="field"><label>メールアドレス</label><input id="re" type="email" placeholder="email@example.com"></div>
+        <div class="field"><label>パスワード（6文字以上）</label><input id="rp" type="password" placeholder="パスワード"></div>
+        <button class="btn cta" onclick="doReg()">アカウントを作成</button>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <button class="btn ghost" style="color:var(--text2);font-size:12px" onclick="doGuest()">👤 ログインせずにゲストで続ける</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ルール説明 -->
+  <div style="width:100%;max-width:400px;margin-top:16px">
+    <details style="background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:14px 18px;cursor:pointer">
+      <summary style="font-size:13px;font-weight:700;color:var(--text);list-style:none;display:flex;align-items:center;gap:8px">
+        <span>📖</span> ゲームルールを見る
+        <span style="margin-left:auto;font-size:10px;color:var(--text2)">タップで開く</span>
+      </summary>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">
+        <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px">① 初期購入フェーズ</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">手持ちの<b style="color:var(--text)">1500万円</b>で好きな事業を購入できます。同一色の事業は買えません。全員が「パス」を押すとゲーム開始。</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;font-weight:700;color:var(--purple);margin-bottom:4px">② 1周目・サイコロフェーズ</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">全員がサイコロを振りながら一周。他の人の事業に止まった場合は通行料を支払い、誰も購入していないマスでは購入またはスキップが選べます。全員が一周したら交渉フェーズへ。</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px">③ 交渉フェーズ</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">自由に事業を取引・交渉できます。<b style="color:var(--text)">同一色を揃えると投資（設備建設）が可能</b>になり、家賃が大幅アップ。</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;font-weight:700;color:var(--color-red);margin-bottom:4px">④ ゲーム進行・終了</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.6">交渉後は再びサイコロを振ってプレイ。誰かが<b style="color:var(--text)">破産したらゲーム終了</b>。資産が一番多い人の勝ちです！</div>
+        </div>
+        <div style="background:var(--s2);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">💡 主なマスの種類</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px;color:var(--text2)">
+            <div>🏢 <b style="color:var(--text)">事業マス</b>：購入・家賃</div>
+            <div>🚂 <b style="color:var(--text)">鉄道</b>：4駅で家賃最大</div>
+            <div>⚡ <b style="color:var(--text)">電力・水道</b>：サイコロ連動</div>
+            <div>🎴 <b style="color:var(--text)">チャンス</b>：ランダムイベント</div>
+            <div>📋 <b style="color:var(--text)">共同基金</b>：ランダムイベント</div>
+            <div>🔒 <b style="color:var(--text)">刑務所</b>：通過のみ</div>
+            <div>💸 <b style="color:var(--text)">法人税</b>：200万支払</div>
+            <div>🅿️ <b style="color:var(--text)">駐車場</b>：何もなし</div>
+          </div>
+        </div>
+      </div>
+    </details>
+  </div>
+</div>
+
+<!-- ロビー -->
+<div id="v-lobby" class="view">
+  <div id="lobby-hdr">
+    <div class="lhdr-left">
+      <div class="lhdr-icon">🚀</div>
+      <span class="lhdr-title">起業体験モノポリー</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:12px;color:var(--text2)" id="lname"></span>
+      <button class="xs ghost" onclick="doOut()">ログアウト</button>
+    </div>
+  </div>
+  <div id="lobby-body">
+    <div id="lobby-left">
+      <!-- 友達申請受信 -->
+      <div>
+        <div class="sec-hdr">友達申請 <span class="badge-dot" id="rbadge"></span></div>
+        <div id="reqs"></div>
+      </div>
+      <!-- 友達検索 -->
+      <div>
+        <div class="sec-hdr">友達を探す</div>
+        <div class="search-row">
+          <input id="sq" type="text" placeholder="名前またはメール">
+          <button class="xs cta" onclick="doSearch()">検索</button>
+        </div>
+        <div id="sres"></div>
+      </div>
+      <!-- 友達リスト -->
+      <div>
+        <div class="sec-hdr">友達</div>
+        <div id="flist"></div>
+      </div>
+    </div>
+    <div id="lobby-right">
+      <div class="sec-hdr" style="margin-bottom:14px">ルーム</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="btn cta" style="max-width:200px" onclick="createRoom()">＋ ルームを作成</button>
+        <button class="btn ghost" style="max-width:200px;border-color:var(--purple);color:var(--purple)" onclick="startBotGame()">🤖 ボットと一人でプレイ</button>
+      </div>
+      <div class="sec-hdr">公開ルーム一覧</div>
+      <div id="rlist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 待機室 -->
+<div id="v-room" class="view">
+  <div class="room-box">
+    <div class="room-box-hdr">
+      <div style="font-size:28px;margin-bottom:10px">🎮</div>
+      <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800">ゲーム待機室</div>
+      <div class="room-id-chip" id="rid-disp"></div>
+    </div>
+    <div class="sec-hdr">参加中のプレイヤー</div>
+    <div id="room-players"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn cta" id="sbtn" style="display:none" onclick="startGame()">ゲームを開始する →</button>
+      <button class="btn ghost" onclick="leaveRoom()">退出する</button>
+    </div>
+    <p style="font-size:11px;color:var(--text2);text-align:center;margin-top:12px">
+      友達を招待するにはロビーの友達リストから「招待」を押してください
+    </p>
+  </div>
+</div>
+
+<!-- ゲーム -->
+<div id="v-game" class="view">
+  <div id="ghdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:26px;height:26px;background:linear-gradient(135deg,var(--accent),var(--purple));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px">🚀</div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:800">起業体験モノポリー</div>
+        <div style="font-size:10px;color:var(--text2)" id="tinfo">—</div>
+      </div>
+    </div>
+    <span class="chip buy" id="pchip">初期購入</span>
+  </div>
+  <div id="glayout">
+    <div id="board-col"><div id="board-wrap"><div id="board"></div></div></div>
+    <div id="gsb">
+      <div id="pp">
+        <div class="alb" style="margin-bottom:6px">プレイヤー</div>
+        <div id="pcards"></div>
+      </div>
+      <div id="ap">
+        <div class="alb">アクション</div>
+        <div id="amsg">接続中...</div>
+        <div class="dr">
+          <div class="die" id="d1">⚀</div>
+          <div class="die" id="d2">⚀</div>
+          <span class="ds" id="ds"></span>
+        </div>
+        <div id="abtn"></div>
+        <div id="logbox">
+          <div class="alb" style="margin-bottom:4px">ログ</div>
+          <div id="loglist"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <div class="mbtns" id="mbtns"></div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,signOut,onAuthStateChanged,updateProfile}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import{getDatabase,ref,set,get,push,onValue,update,remove,off}
+  from"https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const FC={
+  apiKey:"AIzaSyDTOs3JQP3DaHXWna-H0G2xe1jiC5SxR9E",
+  authDomain:"monopolyonline.firebaseapp.com",
+  databaseURL:"https://monopolyonline-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId:"monopolyonline",
+  storageBucket:"monopolyonline.firebasestorage.app",
+  messagingSenderId:"665815021049",
+  appId:"1:665815021049:web:59d597d72c3b17fb1cb928",
+  measurementId:"G-4CHZHLJV72"
+};
+const app=initializeApp(FC);
+const auth=getAuth(app);
+const db=getDatabase(app);
+
+// ─── 状態 ───
+let ME=null,ROOM=null,IS_HOST=false,G={};
+const PC=['#f87171','#60a5fa','#34d399','#fbbf24','#a78bfa','#fb923c'];
+const CMAP={brown:'#c07850',lb:'#34d399',pink:'#f472b6',orange:'#fb923c',
+  red:'#f87171',yellow:'#f59e0b',green:'#4ade80',blue:'#60a5fa',
+  railroad:'#94a3b8',utility:'#a78bfa',none:'transparent'};
+const B=[
+  {id:0,n:'GO 資金調達',t:'go',c:'none',p:0,r:[0]},
+  {id:1,n:'クレープ屋',t:'prop',c:'brown',p:60,r:[2,10,30,90,160,250]},
+  {id:2,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:3,n:'ネットショップ',t:'prop',c:'brown',p:60,r:[4,20,60,180,320,450]},
+  {id:4,n:'法人税',t:'tax',c:'none',p:200,r:[0]},
+  {id:5,n:'南日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
+  {id:6,n:'ランドリー',t:'prop',c:'lb',p:100,r:[6,30,90,270,400,550]},
+  {id:7,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
+  {id:8,n:'動物保護カフェ',t:'prop',c:'lb',p:100,r:[6,30,90,270,400,550]},
+  {id:9,n:'アパレル店舗',t:'prop',c:'lb',p:120,r:[8,40,100,300,450,600]},
+  {id:10,n:'刑務所',t:'jail',c:'none',p:0,r:[0]},
+  {id:11,n:'フィットネス',t:'prop',c:'pink',p:140,r:[10,50,150,450,625,750]},
+  {id:12,n:'電力会社',t:'utility',c:'utility',p:150,r:[0]},
+  {id:13,n:'コワーキング',t:'prop',c:'pink',p:140,r:[10,50,150,450,625,750]},
+  {id:14,n:'クラウドSaaS',t:'prop',c:'pink',p:160,r:[12,60,180,500,700,900]},
+  {id:15,n:'西日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
+  {id:16,n:'映画館',t:'prop',c:'orange',p:180,r:[14,70,200,550,750,950]},
+  {id:17,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:18,n:'ビジホ',t:'prop',c:'orange',p:180,r:[14,70,200,550,750,950]},
+  {id:19,n:'メタバース開発',t:'prop',c:'orange',p:200,r:[16,80,220,600,800,1000]},
+  {id:20,n:'駐車場 助成金',t:'parking',c:'none',p:0,r:[0]},
+  {id:21,n:'メガソーラー',t:'prop',c:'red',p:220,r:[18,90,250,700,875,1050]},
+  {id:22,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
+  {id:23,n:'物流センター',t:'prop',c:'red',p:220,r:[18,90,250,700,875,1050]},
+  {id:24,n:'データセンター',t:'prop',c:'red',p:240,r:[20,100,300,750,925,1100]},
+  {id:25,n:'北日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
+  {id:26,n:'大型モール',t:'prop',c:'yellow',p:260,r:[22,110,330,800,975,1150]},
+  {id:27,n:'タワマン',t:'prop',c:'yellow',p:260,r:[22,110,330,800,975,1150]},
+  {id:28,n:'水道局',t:'utility',c:'utility',p:150,r:[0]},
+  {id:29,n:'リゾート',t:'prop',c:'yellow',p:280,r:[24,120,360,850,1025,1200]},
+  {id:30,n:'刑務所へ',t:'gotojail',c:'none',p:0,r:[0]},
+  {id:31,n:'再エネ事業',t:'prop',c:'green',p:300,r:[26,130,390,900,1100,1275]},
+  {id:32,n:'半導体工場',t:'prop',c:'green',p:300,r:[26,130,390,900,1100,1275]},
+  {id:33,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:34,n:'宇宙開発',t:'prop',c:'green',p:320,r:[28,150,450,1000,1200,1400]},
+  {id:35,n:'東日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
+  {id:36,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
+  {id:37,n:'富士山観光',t:'prop',c:'blue',p:350,r:[35,175,500,1100,1300,1500]},
+  {id:38,n:'固定資産税',t:'tax',c:'none',p:100,r:[0]},
+  {id:39,n:'AI基盤モデル',t:'prop',c:'blue',p:400,r:[50,200,600,1400,1700,2000]},
+];
+const CG={brown:[1,3],lb:[6,8,9],pink:[11,13,14],orange:[16,18,19],
+  red:[21,23,24],yellow:[26,27,29],green:[31,32,34],blue:[37,39]};
+const CHANCE=[
+  {tx:'スタートアップ補助金！',fn:p=>{p.money+=1500;return'<b>+1500万</b>受取'}},
+  {tx:'競合に顧客を奪われた！',fn:p=>{p.money-=500;return'<span class="neg">-500万</span>'}},
+  {tx:'投資家から追加出資！',fn:p=>{p.money+=1000;return'<b>+1000万</b>受取'}},
+  {tx:'法律問題が発生。',fn:p=>{p.money-=800;return'<span class="neg">-800万</span>'}},
+  {tx:'製品がバイラル！',fn:p=>{p.money+=2000;return'<b>+2000万</b>受取'}},
+  {tx:'サーバー障害が発生。',fn:p=>{p.money-=600;return'<span class="neg">-600万</span>'}},
+  {tx:'GOへ進め！',fn:p=>{p.pos=0;p.money+=2000;return'GOへ移動 <b>+2000万</b>'}},
+  {tx:'新聞に特集！次の家賃受取2倍',fn:p=>{p.b2x=true;return'次ターン家賃<b>2倍</b>'}},
+];
+const COMM=[
+  {tx:'銀行エラー',fn:p=>{p.money+=2000;return'<b>+2000万</b>'}},
+  {tx:'医療費',fn:p=>{p.money-=1500;return'<span class="neg">-1500万</span>'}},
+  {tx:'配当収入',fn:p=>{p.money+=1000;return'<b>+1000万</b>'}},
+  {tx:'助成金受取',fn:p=>{p.money+=500;return'<b>+500万</b>'}},
+  {tx:'修繕費',fn:p=>{p.money-=2000;return'<span class="neg">-2000万</span>'}},
+  {tx:'クラウドファンディング成功',fn:p=>{p.money+=1200;return'<b>+1200万</b>'}},
+];
+const DF=['','⚀','⚁','⚂','⚃','⚄','⚅'];
+
+// ─── UTILS ───
+const $=id=>document.getElementById(id);
+const v=id=>$(id)?.value?.trim()||'';
+function show(id){document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));$(id).classList.add('active');}
+function setMsg(h){const el=$('amsg');if(el)el.innerHTML=h;}
+function setAbtn(h){const el=$('abtn');if(el)el.innerHTML=h;}
+function setPill(txt,cls){const el=$('pchip');if(el){el.textContent=txt;el.className='chip '+cls;}}
+function setTI(t){const el=$('tinfo');if(el)el.textContent=t;}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2800);}
+function hueOf(s){return`hsl(${s.split('').reduce((a,c)=>a+c.charCodeAt(0),0)%360},55%,48%)`;}
+function lab(id){return B[id].n;}
+function ownC(pi){const s=new Set();(G.players?.[pi]?.props||[]).forEach(i=>{if(B[i].t==='prop')s.add(B[i].c);});return[...s];}
+function canBld(pi){return ownC(pi).some(c=>{if(!CG[c])return false;return CG[c].every(i=>G.props[i].own===pi)&&CG[c].some(i=>G.props[i].h<5);});}
+function addLog(t){if(G.log)G.log.unshift(t);const el=$('loglist');if(el)el.innerHTML=(G.log||[]).slice(0,10).map(l=>`<div>${l}</div>`).join('');}
+async function save(){
+  if(BOT_MODE){drawBoard();drawSide();updateUI();scheduleBotIfNeeded();return;}
+  await update(ref(db,`rooms/${ROOM}`),{gameState:G});
+}
+
+// ─── AUTH ───
+window.swTab=function(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');$('tp-'+id).classList.add('on');
+};
+window.doReg=async function(){
+  const name=v('rn'),email=v('re'),pass=v('rp');
+  if(!name||!email||!pass){alert('全項目入力してください');return;}
+  try{
+    const c=await createUserWithEmailAndPassword(auth,email,pass);
+    await updateProfile(c.user,{displayName:name});
+    await set(ref(db,`users/${c.user.uid}`),{name,email,uid:c.user.uid,friends:{},friendReqs:{}});
+    toast('登録完了！');
+  }catch(e){alert('エラー: '+e.message);}
+};
+window.doLogin=async function(){
+  try{await signInWithEmailAndPassword(auth,v('le'),v('lp'));}
+  catch(e){alert('ログインエラー: '+e.message);}
+};
+window.doOut=async function(){await signOut(auth);ME=null;ROOM=null;show('v-auth');};
+
+// ─── ゲスト（ログインなし） ───
+window.doGuest=function(){
+  const name = '名無しの起業家';
+  ME={name, uid:'guest_'+Date.now(), friends:{}, friendReqs:{}, isGuest:true};
+  document.getElementById('lname').textContent=ME.name+'（ゲスト）';
+  // ゲストはロビーではなく直接ボット対戦へ
+  show('v-lobby');
+  // ゲスト用にロビーを簡略表示
+  const rright = document.getElementById('lobby-right');
+  if(rright){
+    rright.innerHTML=`
+      <div class="sec-hdr" style="margin-bottom:14px">ゲストモード</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:16px">ゲストはボット対戦のみ利用できます。<br>友達との対戦はアカウント登録が必要です。</p>
+      <button class="btn ghost" style="max-width:240px;border-color:var(--purple);color:var(--purple)" onclick="startBotGame()">🤖 ボットと対戦を始める</button>
+      <div style="margin-top:12px">
+        <button class="btn ghost" style="max-width:240px;font-size:12px;color:var(--text2)" onclick="doOut()">アカウントでログインする</button>
+      </div>`;
+  }
+  const lleft = document.getElementById('lobby-left');
+  if(lleft) lleft.style.display='none';
+};
+
+onAuthStateChanged(auth,async user=>{
+  if(user){
+    const s=await get(ref(db,`users/${user.uid}`));
+    ME=s.val()||{name:user.displayName,uid:user.uid,friends:{},friendReqs:{}};
+    ME.uid=user.uid;
+    $('lname').textContent=ME.name;
+    show('v-lobby');
+    loadFriends();loadRooms();checkInvites();
+  }else{show('v-auth');}
+});
+
+// ─── 友達 ───
+window.doSearch=async function(){
+  const q=v('sq');if(!q)return;
+  const s=await get(ref(db,'users'));
+  const all=s.val()||{};
+  const res=Object.values(all).filter(u=>u.uid!==ME.uid&&
+    (u.name.toLowerCase().includes(q.toLowerCase())||u.email?.toLowerCase().includes(q.toLowerCase())));
+  $('sres').innerHTML=res.length?res.map(u=>`
+    <div class="f-row">
+      <div class="av sm" style="background:${hueOf(u.uid)}">${u.name[0]}</div>
+      <span class="f-name">${u.name}</span>
+      <button class="xs cta" onclick="sendReq('${u.uid}','${u.name}')">申請</button>
+    </div>`).join(''):'<div style="font-size:11px;color:var(--text2)">見つかりませんでした</div>';
+};
+window.sendReq=async function(uid,name){
+  await set(ref(db,`users/${uid}/friendReqs/${ME.uid}`),{name:ME.name,uid:ME.uid});
+  toast(`${name}に友達申請を送りました`);
+};
+window.acceptFriend=async function(uid,name){
+  await set(ref(db,`users/${ME.uid}/friends/${uid}`),{name,uid});
+  await set(ref(db,`users/${uid}/friends/${ME.uid}`),{name:ME.name,uid:ME.uid});
+  await remove(ref(db,`users/${ME.uid}/friendReqs/${uid}`));
+  toast(`${name}と友達になりました！`);
+};
+window.rejectFriend=async function(uid){await remove(ref(db,`users/${ME.uid}/friendReqs/${uid}`));};
+
+function loadFriends(){
+  onValue(ref(db,`users/${ME.uid}/friends`),s=>{
+    const f=s.val()||{};ME.friends=f;
+    const arr=Object.values(f);
+    $('flist').innerHTML=arr.length?arr.map(fr=>`
+      <div class="f-row">
+        <div class="av sm" style="background:${hueOf(fr.uid)}">${fr.name[0]}</div>
+        <span class="f-name">${fr.name}</span>
+        <button class="xs pur" onclick="invFriend('${fr.uid}','${fr.name}')">招待</button>
+      </div>`).join(''):'<div style="font-size:11px;color:var(--text2)">まだ友達がいません</div>';
+  });
+  onValue(ref(db,`users/${ME.uid}/friendReqs`),s=>{
+    const r=s.val()||{};const arr=Object.values(r);
+    const b=$('rbadge');b.style.display=arr.length?'flex':'none';b.textContent=arr.length;
+    $('reqs').innerHTML=arr.length?arr.map(rq=>`
+      <div class="f-row">
+        <div class="av sm" style="background:${hueOf(rq.uid)}">${rq.name[0]}</div>
+        <span class="f-name">${rq.name}</span>
+        <button class="xs cta" onclick="acceptFriend('${rq.uid}','${rq.name}')">承認</button>
+        <button class="xs danger" onclick="rejectFriend('${rq.uid}')">×</button>
+      </div>`).join(''):'<div style="font-size:11px;color:var(--text2)">申請なし</div>';
+  });
+}
+
+// ─── ルーム ───
+window.createRoom=async function(){
+  const r=push(ref(db,'rooms'));ROOM=r.key;IS_HOST=true;
+  await set(r,{id:ROOM,host:ME.uid,hostName:ME.name,
+    players:{[ME.uid]:{name:ME.name,uid:ME.uid}},status:'waiting',createdAt:Date.now()});
+  enterRoom(ROOM);
+};
+function loadRooms(){
+  onValue(ref(db,'rooms'),s=>{
+    const rooms=s.val()||{};
+    const w=Object.values(rooms).filter(r=>r.status==='waiting');
+    $('rlist').innerHTML=w.length?w.map(r=>`
+      <div class="room-card" onclick="joinRoom('${r.id}')">
+        <div><div class="room-name">${r.hostName}のルーム</div>
+          <div class="room-meta">${Object.keys(r.players||{}).length}/6人 参加中</div></div>
+        <button class="xs cta">参加</button>
+      </div>`).join(''):'<div style="font-size:12px;color:var(--text2)">公開ルームなし</div>';
+  });
+}
+window.joinRoom=async function(roomId){
+  const s=await get(ref(db,`rooms/${roomId}`));const room=s.val();
+  if(!room||room.status!=='waiting'){alert('参加できません');return;}
+  if(Object.keys(room.players||{}).length>=6){alert('満員です');return;}
+  await set(ref(db,`rooms/${roomId}/players/${ME.uid}`),{name:ME.name,uid:ME.uid});
+  ROOM=roomId;IS_HOST=(room.host===ME.uid);enterRoom(roomId);
+};
+window.invFriend=async function(uid,name){
+  if(!ROOM){toast('先にルームを作成してください');return;}
+  await set(ref(db,`users/${uid}/invites/${ROOM}`),{roomId:ROOM,fromName:ME.name,from:ME.uid});
+  toast(`${name}を招待しました`);
+};
+function checkInvites(){
+  onValue(ref(db,`users/${ME.uid}/invites`),s=>{
+    const inv=s.val()||{};const arr=Object.values(inv);
+    if(arr.length&&!ROOM){
+      const i=arr[0];
+      if(confirm(`${i.fromName}からルームへの招待が届きました。参加しますか？`)){
+        remove(ref(db,`users/${ME.uid}/invites/${i.roomId}`));
+        joinRoom(i.roomId);
+      }
+    }
+  });
+}
+function enterRoom(roomId){
+  show('v-room');
+  $('rid-disp').textContent=`ルームID: ${roomId}`;
+  onValue(ref(db,`rooms/${roomId}`),s=>{
+    const room=s.val();if(!room)return;
+    IS_HOST=(room.host===ME.uid);
+    const arr=Object.values(room.players||{});
+    $('room-players').innerHTML=arr.map((p,i)=>`
+      <div class="rp-row">
+        <div class="av sm" style="background:${PC[i]}">${p.name[0]}</div>
+        <span style="font-size:13px;font-weight:600">${p.name}</span>
+        ${p.uid===ME.uid?'<span class="you-tag">あなた</span>':''}
+      </div>`).join('');
+    $('sbtn').style.display=IS_HOST&&arr.length>=2?'block':'none';
+    if(room.status==='playing'){
+      G=room.gameState;show('v-game');drawBoard();drawSide();updateUI();
+      listenGame(roomId);
+    }
+  });
+}
+window.leaveRoom=async function(){
+  if(ROOM){
+    await remove(ref(db,`rooms/${ROOM}/players/${ME.uid}`));
+    if(IS_HOST)await remove(ref(db,`rooms/${ROOM}`));
+    ROOM=null;IS_HOST=false;
+  }
+  show('v-lobby');
+};
+
+// ─── ボット対戦 ───
+const BOT_NAMES=['田中AI','鈴木BOT','佐藤AI'];
+let BOT_MODE=false;
+
+window.startBotGame=function(){
+  // インラインUIで表示（moduleスコープ問題を回避）
+  const overlay = document.getElementById('bot-select-overlay');
+  if(overlay) overlay.style.display='flex';
+};
+
+// カスタムイベントでmodule外から呼ばれる
+document.addEventListener('launch-bot',function(e){
+  window.launchBotGame(e.detail.count);
+});
+
+window.launchBotGame=function(botCount){
+  BOT_MODE=true;
+  const players=[{name:ME.name,uid:ME.uid,money:1500,pos:0,color:PC[0],props:[],jail:false,jt:0,bust:false,b2x:false}];
+  for(let i=0;i<botCount;i++){
+    players.push({name:BOT_NAMES[i],uid:'bot_'+i,money:1500,pos:0,color:PC[i+1],props:[],jail:false,jt:0,bust:false,b2x:false,isBot:true});
+  }
+  G={
+    players,props:B.map(()=>({own:-1,h:0})),
+    cur:0,phase:'buy',bpi:0,buyPassed:[],play1Lapped:[],
+    dice:[1,1],log:[],ts:'buy_select',pb:null,
+    msg:`ゲーム開始！<b>${players[0].name}</b>、事業を購入してください。`
+  };
+  show('v-game');drawBoard();drawSide();updateUI();
+  // 最初のターンがボットならボット処理
+  scheduleBotIfNeeded();
+}
+
+function isBot(pi){return G.players?.[pi]?.isBot===true;}
+function isBotTurn(){return G.players&&isBot(G.cur);}
+
+function scheduleBotIfNeeded(){
+  if(!BOT_MODE||!G.players)return;
+  if(!isBotTurn())return;
+  setTimeout(()=>runBotTurn(),1200);
+}
+
+function runBotTurn(){
+  if(!G.players||!isBotTurn())return;
+  const p=G.players[G.cur];
+
+  if(G.phase==='buy'){
+    // ボットの購入フェーズ：買えるものをランダムに1〜2個買う
+    const oc=ownC(G.cur);
+    const buyable=[];
+    B.forEach((b,i)=>{
+      if(b.t!=='prop'&&b.t!=='railroad'&&b.t!=='utility')return;
+      if(G.props[i].own!==-1)return;
+      if(oc.includes(b.c)&&b.t==='prop')return;
+      if(b.p<=p.money)buyable.push(i);
+    });
+    // ランダムに1〜2個購入
+    const toPurchase=buyable.sort(()=>Math.random()-0.5).slice(0,Math.floor(Math.random()*2)+1);
+    toPurchase.forEach(i=>{
+      if(G.props[i].own===-1&&B[i].p<=p.money){
+        G.props[i].own=G.cur;p.props.push(i);p.money-=B[i].p;
+        addLog(`${p.name}が${lab(i)}を取得`);
+      }
+    });
+    // パス
+    if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
+    G.bpi=(G.bpi||0)+1;
+    if(G.buyPassed.length>=G.players.filter(pl=>!pl.bust).length){
+      G.phase='play1';G.cur=0;G.ts='roll';G.play1Lapped=[];
+      G.msg=`ゲーム開始！<b>${G.players[0].name}</b>、サイコロを振ってください。`;
+    }else{
+      G.cur=G.bpi%G.players.length;
+      G.msg=`<b>${G.players[G.cur].name}</b>の購入ターン`;
+    }
+    drawBoard();drawSide();updateUI();
+    scheduleBotIfNeeded();
+    return;
+  }
+
+  if(G.phase==='negotiate'){
+    // ボットは交渉スキップ→即ゲーム開始（ホストがボットなら自動開始）
+    if(isBotTurn()){
+      G.phase='play';G.cur=0;G.ts='roll';
+      G.msg=`ゲーム再開！<b>${G.players[0].name}</b>のターン。`;
+      drawBoard();drawSide();updateUI();
+      scheduleBotIfNeeded();
+    }
+    return;
+  }
+
+  if((G.phase==='play1'||G.phase==='play')&&G.ts==='roll'){
+    // ボットがサイコロを振る
+    const d1=Math.ceil(Math.random()*6),d2=Math.ceil(Math.random()*6);
+    G.dice=[d1,d2];
+    $('d1').textContent=DF[d1];$('d2').textContent=DF[d2];$('ds').textContent=`= ${d1+d2}`;
+    if(p.jail){p.jt++;if(p.jt>=3||d1===d2){p.jail=false;p.jt=0;}else{G.ts='done';botEndTurn();return;}}
+    const old=p.pos;p.pos=(p.pos+d1+d2)%40;
+    if(p.pos<old){p.money+=2000;addLog(`${p.name}GO通過+2000万`);}
+    if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);}
+    addLog(`${p.name}→${lab(p.pos)}`);
+    drawBoard();
+    botLand(G.cur,p.pos);
+    return;
+  }
+
+  if(G.ts==='done')botEndTurn();
+}
+
+function botLand(pi,pos){
+  const p=G.players[pi],cell=B[pos],pr=G.props[pos];
+  if(cell.t==='go'){p.money+=0;G.ts='done';}// GO通過はroll時処理済み
+  else if(cell.t==='tax'){p.money-=cell.p;addLog(`${p.name}税${cell.p}万`);chkBust(pi);G.ts='done';}
+  else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.ts='done';}
+  else if(cell.t==='jail'||cell.t==='parking'){G.ts='done';}
+  else if(cell.t==='chance'){const c=CHANCE[Math.floor(Math.random()*CHANCE.length)];c.fn(p);addLog(`${p.name}チャンス`);chkBust(pi);G.ts='done';}
+  else if(cell.t==='community'){const c=COMM[Math.floor(Math.random()*COMM.length)];c.fn(p);addLog(`${p.name}共同基金`);chkBust(pi);G.ts='done';}
+  else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
+    if(pr.own===-1){
+      // ボットは買える場合70%の確率で購入
+      if(p.money>=cell.p&&Math.random()<0.7){
+        G.props[pos].own=pi;p.props.push(pos);p.money-=cell.p;
+        addLog(`${p.name}が${lab(pos)}を取得`);
+      }
+      G.ts='done';
+    }else if(pr.own===pi){G.ts='done';}
+    else{
+      const ow=G.players[pr.own];let rent=calcR(pos,pr);
+      if(ow.b2x){rent*=2;ow.b2x=false;}
+      p.money-=rent;ow.money+=rent;
+      addLog(`${p.name}→${ow.name} ${rent}万`);chkBust(pi);G.ts='done';
+    }
+  }else{G.ts='done';}
+  G.msg=`${p.name}が${lab(pos)}に止まりました。`;
+  drawBoard();drawSide();updateUI();
+  setTimeout(()=>botEndTurn(),800);
+}
+
+function botEndTurn(){
+  // ボットが同一色を持っていたら投資
+  if(G.phase==='play'&&canBld(G.cur)){
+    const pi=G.cur,p=G.players[pi];
+    ownC(pi).forEach(c=>{
+      if(!CG[c])return;
+      if(CG[c].every(i=>G.props[i].own===pi)){
+        CG[c].forEach(i=>{
+          if(G.props[i].h<5&&p.money>=Math.floor(B[i].p/2)&&Math.random()<0.5){
+            const cost=Math.floor(B[i].p/2);
+            G.props[i].h++;p.money-=cost;
+            addLog(`${p.name}が${lab(i)}に投資`);
+          }
+        });
+      }
+    });
+  }
+
+  if(G.phase==='play1'&&G.play1Lapped.length>=G.players.filter(p=>!p.bust).length){
+    G.phase='negotiate';G.cur=0;G.ts='negotiate';
+    G.msg='交渉フェーズ！準備ができたら「ゲーム開始」を押してください。';
+    drawBoard();drawSide();updateUI();
+    // 全員ボットなら自動でゲーム開始（起こりえないが念のため）
+    return;
+  }
+  let n=(G.cur+1)%G.players.length;
+  while(G.players[n].bust&&n!==G.cur)n=(n+1)%G.players.length;
+  G.cur=n;G.ts='roll';
+  G.msg=`<b>${G.players[n].name}</b>のターン。`;
+  drawBoard();drawSide();updateUI();
+  scheduleBotIfNeeded();
+}
+
+// ─── ゲーム開始 ───
+window.startGame=async function(){
+  const s=await get(ref(db,`rooms/${ROOM}/players`));
+  const arr=Object.values(s.val()||{});
+  if(arr.length<2){alert('2人以上必要です');return;}
+  const gs={
+    players:arr.map((p,i)=>({name:p.name,uid:p.uid,money:1500,pos:0,color:PC[i],props:[],jail:false,jt:0,bust:false,b2x:false})),
+    props:B.map(()=>({own:-1,h:0})),
+    cur:0,phase:'buy',bpi:0,buyPassed:[],play1Lapped:[],
+    dice:[1,1],log:[],ts:'buy_select',pb:null,msg:'ゲーム開始！初期購入フェーズです。'
+  };
+  await update(ref(db,`rooms/${ROOM}`),{status:'playing',gameState:gs});
+};
+function listenGame(roomId){
+  onValue(ref(db,`rooms/${roomId}/gameState`),s=>{
+    if(!s.val())return;G=s.val();drawBoard();drawSide();updateUI();
+  });
+}
+function isMe(){if(!G.players)return false;const p=G.players[G.cur];if(BOT_MODE)return p?.uid===ME.uid;return p?.uid===ME.uid;}
+
+// ─── UI 更新 ───
+function updateUI(){
+  if(!G.players)return;
+  const p=G.players[G.cur];
+  const pm={'buy':'初期購入','play1':'1周目','negotiate':'交渉中','play':'ゲーム中','end':'終了'};
+  setPill(pm[G.phase]||G.phase, G.phase==='buy'?'buy':G.phase==='negotiate'?'neg':'play');
+  setTI(`${p?.name}のターン${isMe()?' (あなた)':''}`);
+  if(G.msg)setMsg(G.msg);
+  if(G.dice){$('d1').textContent=DF[G.dice[0]];$('d2').textContent=DF[G.dice[1]];$('ds').textContent=`= ${G.dice[0]+G.dice[1]}`;}
+  if(G.log)$('loglist').innerHTML=(G.log||[]).slice(0,10).map(l=>`<div>${l}</div>`).join('');
+  if(G.phase==='end'){setAbtn(`<button class="btn cta" onclick="location.reload()">もう一度プレイ</button>`);return;}
+  if(!isMe()){setAbtn(`<div class="waiting-overlay"><div class="spinner"></div>${p?.name}のターンを待っています...</div>`);return;}
+  // 自分のターン
+  if(G.phase==='buy'){renderBuyUI();}
+  else if(G.phase==='play1'||G.phase==='play'){
+    if(G.ts==='roll')renderRollUI();
+    else if(G.ts==='buy_prop')renderBuyPropUI();
+    else if(G.ts==='done')renderDoneUI();
+  }else if(G.phase==='negotiate'){
+    if(BOT_MODE) G.cur=G.players.findIndex(p=>!p.isBot&&!p.bust);
+    setMsg('全員で自由に交渉・取引ができます。同一色を揃えると投資が可能です。');
+    setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
+  }
+}
+
+// ─── BUY PHASE UI ───
+function renderBuyUI(){
+  const pi=G.cur,p=G.players[pi];
+  setMsg(`<b>${p.name}</b>、1500万円の予算で事業を購入してください。<br><small style="color:var(--text2)">全員がパスするとゲーム開始</small>`);
+  const oc=ownC(pi);
+  let g='<div class="pgrid">';
+  B.forEach((b,i)=>{
+    if(b.t!=='prop'&&b.t!=='railroad'&&b.t!=='utility')return;
+    const dim=G.props[i].own!==-1||(oc.includes(b.c)&&b.t==='prop')||b.p>p.money;
+    g+=`<div class="pbtn${dim?' dim':''}" onclick="doBuyPhase(${i})">
+      <span class="pdt" style="background:${CMAP[b.c]}"></span>${b.n}<br>
+      <span style="font-size:9px;color:var(--text2)">${b.p}万</span></div>`;
+  });
+  g+='</div>';
+  setAbtn(g+`<button class="btn amber" onclick="doPassBuy()">パスして次へ →</button>`);
+}
+window.doBuyPhase=async function(i){
+  const pi=G.cur,p=G.players[pi],b=B[i];
+  if(G.props[i].own!==-1||b.p>p.money)return;
+  G.props[i].own=pi;p.props.push(i);p.money-=b.p;
+  addLog(`${p.name}が${lab(i)}を取得`);G.msg=`<b>${lab(i)}</b>を取得！残り <b>${p.money.toLocaleString()}万円</b>`;
+  await save();
+};
+window.doPassBuy=async function(){
+  if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
+  G.bpi=(G.bpi||0)+1;
+  if(G.buyPassed.length>=G.players.filter(p=>!p.bust).length){
+    G.phase='play1';G.cur=0;G.ts='roll';G.play1Lapped=[];
+    G.msg=`ゲーム開始！<b>${G.players[0].name}</b>、サイコロを振ってください。<small style="color:var(--text2)"> 全員一周で交渉フェーズへ</small>`;
+  }else{
+    G.cur=G.bpi%G.players.length;
+    G.msg=`<b>${G.players[G.cur].name}</b>、事業を購入してください。`;
+  }
+  await save();
+};
+
+// ─── PLAY UI ───
+function renderRollUI(){
+  let h=`<button class="btn cta" onclick="doRoll()">🎲 サイコロを振る</button>`;
+  if(G.phase==='play')h+=`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button>`;
+  if(G.phase==='play'&&canBld(G.cur))h+=`<button class="btn ghost" onclick="openBld()">🏗️ 投資する</button>`;
+  setAbtn(h);
+}
+function renderBuyPropUI(){
+  const cell=B[G.pb];const p=G.players[G.cur];
+  setMsg(`📌 <b>${lab(G.pb)}</b>は空き物件！<br>取得: ${cell.p}万円　手持ち: ${p.money.toLocaleString()}万円`);
+  setAbtn(`<button class="btn cta" onclick="doAcquire()">この事業を取得</button><button class="btn ghost" onclick="doSkip()">スキップ</button>`);
+}
+function renderDoneUI(){
+  let h=`<button class="btn cta" onclick="doEnd()">ターン終了 →</button>`;
+  if(G.phase==='play')h+=`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button>`;
+  if(G.phase==='play'&&canBld(G.cur))h+=`<button class="btn ghost" onclick="openBld()">🏗️ 投資する</button>`;
+  setAbtn(h);
+}
+
+window.doRoll=async function(){
+  const d1=Math.ceil(Math.random()*6),d2=Math.ceil(Math.random()*6);
+  G.dice=[d1,d2];
+  const p=G.players[G.cur];
+  if(p.jail){p.jt++;if(p.jt>=3||d1===d2){p.jail=false;p.jt=0;}else{G.ts='done';G.msg='拘留継続。';await save();return;}}
+  const old=p.pos;p.pos=(p.pos+d1+d2)%40;
+  if(p.pos<old){p.money+=2000;addLog(`${p.name}GO通過+2000万`);}
+  if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);addLog(`${p.name}一周完了`);}
+  addLog(`${p.name}→${lab(p.pos)}`);
+  await doLand(G.cur,p.pos);
+};
+
+async function doLand(pi,pos){
+  const p=G.players[pi],cell=B[pos],pr=G.props[pos];
+  if(cell.t==='go'){G.msg='GO！<b>+2000万円</b>受取。';G.ts='done';}
+  else if(cell.t==='tax'){p.money-=cell.p;G.msg=`💸 <b>${lab(pos)}</b>！<span class="neg">-${cell.p}万円</span>`;chkBust(pi);G.ts='done';}
+  else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.msg='⛓ 刑務所へ！';G.ts='done';}
+  else if(cell.t==='jail'||cell.t==='parking'){G.msg=`${lab(pos)}。通過。`;G.ts='done';}
+  else if(cell.t==='chance'){const c=CHANCE[Math.floor(Math.random()*CHANCE.length)];const r=c.fn(p);G.msg=`🎴 チャンス！<br>${c.tx}<br>${r}`;chkBust(pi);G.ts='done';}
+  else if(cell.t==='community'){const c=COMM[Math.floor(Math.random()*COMM.length)];const r=c.fn(p);G.msg=`📋 共同基金！<br>${c.tx}<br>${r}`;chkBust(pi);G.ts='done';}
+  else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
+    if(pr.own===-1){G.ts='buy_prop';G.pb=pos;G.msg=`📌 <b>${lab(pos)}</b>は空き！取得 ${cell.p}万円`;}
+    else if(pr.own===pi){G.msg=`自分の事業。`;G.ts='done';}
+    else{
+      const ow=G.players[pr.own];let rent=calcR(pos,pr);
+      if(ow.b2x){rent*=2;ow.b2x=false;}
+      p.money-=rent;ow.money+=rent;
+      G.msg=`<b>${lab(pos)}</b>は${ow.name}の事業！<span class="neg">-${rent.toLocaleString()}万</span>支払い`;
+      addLog(`${p.name}→${ow.name} ${rent}万`);chkBust(pi);G.ts='done';
+    }
+  }
+  await save();
+}
+function calcR(pos,pr){
+  const cell=B[pos];
+  if(cell.t==='railroad'){const n=G.players[pr.own].props.filter(i=>B[i].t==='railroad').length;return[25,50,100,200][n-1]||25;}
+  if(cell.t==='utility'){const n=G.players[pr.own].props.filter(i=>B[i].t==='utility').length;return n===2?(G.dice[0]+G.dice[1])*100:(G.dice[0]+G.dice[1])*40;}
+  return cell.r[Math.min(pr.h,cell.r.length-1)];
+}
+window.doAcquire=async function(){
+  const pos=G.pb,p=G.players[G.cur];
+  if(p.money<B[pos].p){G.msg='<span class="neg">資金不足！</span>';await save();return;}
+  G.props[pos].own=G.cur;p.props.push(pos);p.money-=B[pos].p;
+  addLog(`${p.name}が${lab(pos)}を取得`);G.msg=`✅ <b>${lab(pos)}</b>を取得！残り${p.money.toLocaleString()}万`;G.ts='done';await save();
+};
+window.doSkip=async function(){G.msg='スキップ。';G.ts='done';await save();};
+window.doEnd=async function(){
+  if(G.phase==='play1'&&G.play1Lapped.length>=G.players.filter(p=>!p.bust).length){
+    G.phase='negotiate';G.cur=0;G.ts='negotiate';
+    G.msg='交渉フェーズ！同一色を揃えると投資が可能になります。';await save();return;
+  }
+  let n=(G.cur+1)%G.players.length;
+  while(G.players[n].bust&&n!==G.cur)n=(n+1)%G.players.length;
+  G.cur=n;G.ts='roll';G.msg=`<b>${G.players[n].name}</b>のターン。`;await save();
+};
+window.doStartPlay=async function(){
+  G.phase='play';G.cur=0;G.ts='roll';G.msg=`ゲーム再開！<b>${G.players[0].name}</b>のターン。`;await save();
+};
+function chkBust(pi){
+  const p=G.players[pi];if(p.money>0)return;
+  p.bust=true;p.money=0;addLog(`${p.name}が破産！`);
+  const alive=G.players.filter(x=>!x.bust);
+  if(alive.length<=1){
+    const rank=[...G.players].sort((a,b)=>b.money-a.money).map((x,i)=>`${i+1}位: ${x.name}　${x.money.toLocaleString()}万円`).join('<br>');
+    G.phase='end';G.msg=`🏆 <b>ゲーム終了！</b><br><br>${rank}`;
+  }
+}
+
+// ─── 投資 ───
+window.openBld=function(){
+  const pi=G.cur,p=G.players[pi];
+  const opts=[];
+  ownC(pi).forEach(c=>{if(!CG[c])return;if(CG[c].every(i=>G.props[i].own===pi))CG[c].forEach(i=>{if(G.props[i].h<5)opts.push(i);});});
+  if(!opts.length){setMsg('投資可能な事業がありません。');return;}
+  showModal('🏗️ 投資する','投資先を選んでください。',opts.map(i=>({
+    lb:`${lab(i)} (${G.props[i].h}→${G.props[i].h+1}) ${Math.floor(B[i].p/2)}万`,cls:'ghost',
+    fn:async()=>{
+      const cost=Math.floor(B[i].p/2);
+      if(p.money<cost){hideModal();setMsg('<span class="neg">資金不足！</span>');return;}
+      G.props[i].h++;p.money-=cost;addLog(`${p.name}が${lab(i)}に投資`);
+      G.msg=`投資完了！残り${p.money.toLocaleString()}万`;hideModal();await save();
+    }
+  })));
+};
+
+// ─── 取引 ───
+window.openTrd=function(){
+  const oth=G.players.filter((_,i)=>i!==G.cur&&!G.players[i].bust);
+  if(!oth.length){setMsg('取引相手がいません。');return;}
+  showModal('🤝 取引相手を選択','',oth.map(p=>{
+    const ti=G.players.indexOf(p);return{lb:p.name,cls:'ghost',fn:()=>{hideModal();window.openTrdWith(ti);}};
+  }));
+};
+window.openTrdWith=function(ti){
+  window._ts={give:-1,recv:-1};
+  const mp=G.players[G.cur].props,tp=G.players[ti].props;
+  const pb=(i,side)=>`<div class="pbtn" onclick="selT('${side}',${i},this)">
+    <span class="pdt" style="background:${CMAP[B[i].c]}"></span>${lab(i)}<br>
+    <span style="font-size:9px;color:var(--text2)">${B[i].p}万</span></div>`;
+  $('mt').textContent=`${G.players[ti].name}と取引`;
+  $('mb').innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div><div style="font-size:9px;color:var(--text2);margin-bottom:4px">渡す事業</div>
+        <div class="pgrid">${mp.map(i=>pb(i,'give')).join('')}<div class="pbtn" onclick="selT('give',-1,this)">なし</div></div></div>
+      <div><div style="font-size:9px;color:var(--text2);margin-bottom:4px">受取る事業</div>
+        <div class="pgrid">${tp.map(i=>pb(i,'recv')).join('')}<div class="pbtn" onclick="selT('recv',-1,this)">なし</div></div></div>
+    </div>
+    <div class="crow"><span>現金差額:</span><input type="number" id="tcash" value="0" step="100" min="0">万円</div>`;
+  $('mbtns').innerHTML=`<button class="btn cta" onclick="execTrd(${ti})">取引実行</button><button class="btn ghost" onclick="hideModal()">キャンセル</button>`;
+  $('mw').classList.add('on');
+}
+window.selT=function(side,i,el){document.querySelectorAll(`[onclick*="selT('${side}'"]`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');window._ts[side]=i;};
+window.execTrd=async function(ti){
+  const{give,recv}=window._ts,cash=parseInt($('tcash').value)||0;
+  const me=G.players[G.cur],them=G.players[ti];
+  if(give!==-1){G.props[give].own=ti;them.props.push(give);me.props=me.props.filter(x=>x!==give);}
+  if(recv!==-1){G.props[recv].own=G.cur;me.props.push(recv);them.props=them.props.filter(x=>x!==recv);}
+  if(cash>0){me.money+=cash;them.money-=cash;}
+  addLog(`${me.name}↔${them.name}取引`);G.msg='✅ 取引完了！';hideModal();await save();
+};
+
+// ─── モーダル ───
+window._mcb=[];
+function showModal(title,body,btns){
+  $('mt').textContent=title;
+  $('mb').innerHTML=typeof body==='string'?body:'';
+  window._mcb=btns.map(b=>b.fn);
+  $('mbtns').innerHTML=btns.map((b,i)=>`<button class="btn ${b.cls}" onclick="window._mcb[${i}]()">${b.lb}</button>`).join('');
+  $('mw').classList.add('on');
+}
+window.hideModal=function(){$('mw').classList.remove('on');};
+
+// ─── ボード描画 ───
+const GRID=Array(11).fill(null).map(()=>Array(11).fill(null));
+(()=>{
+  const bot=[0,1,2,3,4,5,6,7,8,9,10],lft=[10,11,12,13,14,15,16,17,18,19,20];
+  const top=[20,21,22,23,24,25,26,27,28,29,30],rgt=[30,31,32,33,34,35,36,37,38,39,0];
+  for(let c=0;c<11;c++)GRID[10][c]=bot[c];
+  for(let r=0;r<11;r++)GRID[10-r][0]=lft[r];
+  for(let c=0;c<11;c++)GRID[0][c]=top[c];
+  for(let r=0;r<11;r++)GRID[r][10]=rgt[r];
+})();
+
+function drawBoard(){
+  const bd=$('board');if(!bd||!G.players)return;
+  const pm={};G.players.forEach((p,pi)=>{if(!p.bust){if(!pm[p.pos])pm[p.pos]=[];pm[p.pos].push(pi);}});
+  bd.innerHTML='';
+  for(let r=0;r<11;r++){for(let c=0;c<11;c++){
+    const div=document.createElement('div');div.className='cell';
+    if(r>0&&r<10&&c>0&&c<10){
+      div.classList.add('mid');
+      if(r===5&&c===5)div.innerHTML=`<div style="text-align:center;padding:4px"><div style="font-size:14px">🚀</div><div style="font-size:5px;font-weight:800;color:var(--accent);font-family:Syne,sans-serif;line-height:1.3">起業体験<br>モノポリー</div></div>`;
+      bd.appendChild(div);continue;
+    }
+    const idx=GRID[r][c];if(idx===null){bd.appendChild(div);continue;}
+    const cell=B[idx],pr=G.props[idx];
+    const toks=pm[idx]||[];if(toks.length)div.classList.add('here');
+    let sd='t';if(r===10)sd='b';else if(r===0)sd='t';else if(c===0)sd='l';else sd='r';
+    let in2='<div class="ci">';
+    if(cell.c&&cell.c!=='none')in2+=`<div class="cs ${sd}" style="background:${CMAP[cell.c]}"></div>`;
+    if(cell.t==='go')in2+=`<div style="font-size:8px;font-weight:900;color:var(--accent);font-family:Syne,sans-serif">GO</div><div style="font-size:4px;color:var(--text2)">資金調達</div>`;
+    else if(cell.t==='jail')in2+=`<div style="font-size:10px">🔒</div><div style="font-size:4px;color:var(--text2)">刑務所</div>`;
+    else if(cell.t==='gotojail')in2+=`<div style="font-size:9px;color:var(--red)">⛓</div><div style="font-size:4px;color:var(--text2)">→刑務所</div>`;
+    else if(cell.t==='parking')in2+=`<div style="font-size:9px;color:var(--accent)">🅿</div><div style="font-size:4px;color:var(--text2)">助成金</div>`;
+    else if(cell.t==='tax')in2+=`<div style="font-size:9px">💸</div><div class="cn">${lab(idx)}</div>`;
+    else if(cell.t==='chance')in2+=`<div style="font-size:11px;font-weight:900;color:var(--amber)">?</div>`;
+    else if(cell.t==='community')in2+=`<div style="font-size:9px">📋</div>`;
+    else{
+      in2+=`<div class="cn">${lab(idx)}</div><div class="cp">${cell.p}万</div>`;
+      if(pr.h>0){in2+='<div class="ivd">';if(pr.h===5)in2+=`<div class="ip ht"></div>`;else for(let x=0;x<pr.h;x++)in2+=`<div class="ip h"></div>`;in2+='</div>';}
+    }
+    if(pr.own>=0)in2+=`<div class="om" style="background:${G.players[pr.own].color}"></div>`;
+    if(toks.length){in2+='<div class="tok-l">';toks.forEach(pi=>{const p=G.players[pi];in2+=`<div class="tok" style="background:${p.color}">${p.name[0]}</div>`;});in2+='</div>';}
+    in2+='</div>';div.innerHTML=in2;bd.appendChild(div);
+  }}
+}
+function drawSide(){
+  const el=$('pcards');if(!el||!G.players)return;
+  el.innerHTML=G.players.map((p,i)=>`
+    <div class="pcard${i===G.cur&&!p.bust?' on':''}${p.bust?' bust':''}">
+      <div class="pcard-t">
+        <div class="av sm" style="background:${p.color}">${p.name[0]}</div>
+        <div>
+          <div class="pcard-n">${p.name}${p.uid===ME?.uid?'<span style="font-size:8px;color:var(--accent);margin-left:4px">YOU</span>':''}${p.bust?' 💀':''}</div>
+          <div class="pcard-s">${lab(p.pos)} · 事業${p.props.length}件${p.jail?' 🔒':''}</div>
+        </div>
+      </div>
+      <div class="pcard-m">${p.money.toLocaleString()}<span>万円</span></div>
+    </div>`).join('');
+}
+</script>
+
+<script>
+function swTab(id,btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.tp').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('tp-'+id).classList.add('on');
+}
+
+// ボット人数選択ボタン（moduleスコープ外から呼ぶ）
+document.addEventListener('DOMContentLoaded',function(){
+  const overlay = document.getElementById('bot-select-overlay');
+  function closeBotOverlay(){ overlay.style.display='none'; }
+
+  document.getElementById('bot-btn-1').addEventListener('click',function(){
+    closeBotOverlay();
+    // moduleスコープのlaunchBotGameをカスタムイベント経由で呼ぶ
+    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:1}}));
+  });
+  document.getElementById('bot-btn-2').addEventListener('click',function(){
+    closeBotOverlay();
+    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:2}}));
+  });
+  document.getElementById('bot-btn-3').addEventListener('click',function(){
+    closeBotOverlay();
+    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:3}}));
+  });
+  document.getElementById('bot-btn-cancel').addEventListener('click',closeBotOverlay);
+});
+</script>
+<!-- ボット人数選択オーバーレイ（module外で動作） -->
+<div id="bot-select-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:20px">
+  <div style="background:#111218;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px;width:100%;max-width:320px">
+    <div style="font-family:Syne,sans-serif;font-size:17px;font-weight:800;margin-bottom:6px">🤖 ボットと対戦</div>
+    <div style="font-size:12px;color:#6b7299;margin-bottom:16px">ボットの人数を選んでください</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-1">ボット1人（合計2人）</button>
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-2">ボット2人（合計3人）</button>
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-3">ボット3人（合計4人）</button>
+      <button style="width:100%;padding:11px;font-size:12px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)" id="bot-btn-cancel">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- モーダル -->
+<div id="mw">
+  <div class="modal">
+    <h2 id="mt"></h2>
+    <div class="msub" id="mb"></div>
 </body>
 </html>
