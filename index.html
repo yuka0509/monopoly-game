@@ -126,7 +126,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 #glayout{display:grid;grid-template-columns:1fr 236px;flex:1;min-height:0;overflow:hidden}
 #board-col{padding:10px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
   background:var(--bg)}
-#board-wrap{width:100%;max-width:520px}
+#board-wrap{width:100%;max-width:780px}
 #board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);
   gap:1.5px;background:var(--border);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%}
 .cell{background:var(--s1);display:flex;flex-direction:column;align-items:center;
@@ -135,22 +135,22 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cell.here{background:rgba(0,245,160,0.07)!important}
 .ci{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;width:100%;height:100%;position:relative;z-index:1}
-.cn{font-size:4.5px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 1px}
-.cp{font-size:4px;color:var(--text2)}
+.cn{font-size:7px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 2px}
+.cp{font-size:6px;color:var(--text2)}
 .cs{position:absolute;opacity:0.9}
-.cs.t{top:0;left:0;right:0;height:4px}
-.cs.b{bottom:0;left:0;right:0;height:4px}
-.cs.l{left:0;top:0;bottom:0;width:4px}
-.cs.r{right:0;top:0;bottom:0;width:4px}
-.om{position:absolute;top:3px;left:2px;width:5px;height:5px;border-radius:50%;border:1px solid rgba(255,255,255,0.4)}
-.ivd{display:flex;gap:1px;flex-wrap:wrap;justify-content:center;margin-top:1px}
-.ip{width:3.5px;height:3.5px;border-radius:0.5px}
+.cs.t{top:0;left:0;right:0;height:7px}
+.cs.b{bottom:0;left:0;right:0;height:7px}
+.cs.l{left:0;top:0;bottom:0;width:7px}
+.cs.r{right:0;top:0;bottom:0;width:7px}
+.om{position:absolute;top:4px;left:3px;width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.4)}
+.ivd{display:flex;gap:1.5px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+.ip{width:5.5px;height:5.5px;border-radius:1px}
 .ip.h{background:var(--accent)}
 .ip.ht{background:var(--red)}
 .tok-l{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:flex-end;
   justify-content:flex-end;padding:1px;gap:0.5px;z-index:5}
-.tok{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--bg);
-  display:flex;align-items:center;justify-content:center;font-size:4.5px;
+.tok{width:15px;height:15px;border-radius:50%;border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:7px;
   font-weight:700;color:white;flex-shrink:0;box-shadow:0 0 4px rgba(0,0,0,0.5)}
 
 /* ── SIDEBAR ── */
@@ -249,6 +249,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <button class="btn cta" onclick="doReg()">アカウントを作成</button>
       </div>
       <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="field" style="margin-bottom:8px">
+          <label>ゲスト名</label>
+          <input id="gname" type="text" placeholder="表示名を入力（省略可）" maxlength="20">
+        </div>
         <button class="btn ghost" style="color:var(--text2);font-size:12px" onclick="doGuest()">👤 ログインせずにゲストで続ける</button>
       </div>
     </div>
@@ -539,7 +543,7 @@ window.doOut=async function(){await signOut(auth);ME=null;ROOM=null;show('v-auth
 
 // ─── ゲスト（ログインなし） ───
 window.doGuest=function(){
-  const name = '名無しの起業家';
+  const name = v('gname') || '名無しの起業家';
   ME={name, uid:'guest_'+Date.now(), friends:{}, friendReqs:{}, isGuest:true};
   document.getElementById('lname').textContent=ME.name+'（ゲスト）';
   // ゲストはロビーではなく直接ボット対戦へ
