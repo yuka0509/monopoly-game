@@ -808,6 +808,21 @@ function runBotTurn(){
     return;
   }
 
+  if((G.phase==='play1'||G.phase==='play')&&G.ts==='auction'){
+    // ボットのオークション入札（50%で入札、上限は手持ちの半額まで）
+    const cell=B[G.auction.pos];
+    const minBid=G.auction.highBid+10;
+    const maxBid=Math.min(Math.floor(p.money*0.5/10)*10,cell.p);
+    if(minBid<=maxBid&&Math.random()<0.5){
+      G.auction.highBid=minBid;G.auction.highBidder=G.cur;
+      addLog(`${p.name}が${minBid}万入札`);
+    }else{
+      G.auction.passed.push(G.cur);
+      addLog(`${p.name}がパス`);
+    }
+    advanceAuction();drawBoard();drawSide();updateUI();scheduleBotIfNeeded();return;
+  }
+
   if(G.ts==='done')botEndTurn();
 }
 
@@ -910,6 +925,7 @@ function updateUI(){
   else if(G.phase==='play1'||G.phase==='play'){
     if(G.ts==='roll')renderRollUI();
     else if(G.ts==='buy_prop')renderBuyPropUI();
+    else if(G.ts==='auction')renderAuctionUI();
     else if(G.ts==='done')renderDoneUI();
   }else if(G.phase==='negotiate'){
     if(BOT_MODE) G.cur=G.players.findIndex(p=>!p.isBot&&!p.bust);
@@ -966,8 +982,9 @@ function renderRollUI(){
 }
 function renderBuyPropUI(){
   const cell=B[G.pb];const p=G.players[G.cur];
-  setMsg(`📌 <b>${lab(G.pb)}</b>は空き物件！<br>取得: ${cell.p}万円　手持ち: ${p.money.toLocaleString()}万円`);
-  setAbtn(`<button class="btn cta" onclick="doAcquire()">この事業を取得</button><button class="btn ghost" onclick="doSkip()">スキップ</button>`);
+  setMsg(`📌 <b>${lab(G.pb)}</b>は空き物件！<br>定価: ${cell.p}万円　手持ち: ${p.money.toLocaleString()}万円`);
+  const canBuy=p.money>=cell.p;
+  setAbtn(`<button class="btn cta"${canBuy?'':' disabled'} onclick="doAcquire()">購入（${cell.p}万）</button><button class="btn ghost" onclick="doAuction()">オークション</button>`);
 }
 function renderDoneUI(){
   let h=`<button class="btn cta" onclick="doEnd()">ターン終了 →</button>`;
@@ -1022,6 +1039,64 @@ window.doAcquire=async function(){
   addLog(`${p.name}が${lab(pos)}を取得`);G.msg=`✅ <b>${lab(pos)}</b>を取得！残り${p.money.toLocaleString()}万`;G.ts='done';await save();
 };
 window.doSkip=async function(){G.msg='スキップ。';G.ts='done';await save();};
+
+// ─── AUCTION ───
+window.doAuction=async function(){
+  const order=G.players.map((_,i)=>i).filter(i=>!G.players[i].bust);
+  G.auction={pos:G.pb,originalCur:G.cur,highBid:0,highBidder:-1,passed:[],order};
+  G.cur=order[0];G.ts='auction';
+  G.msg=`🔨 オークション開始！<b>${lab(G.pb)}</b>の入札`;
+  await save();
+};
+function renderAuctionUI(){
+  const cell=B[G.auction.pos];const p=G.players[G.cur];
+  const hb=G.auction.highBid;
+  const hbn=G.auction.highBidder>=0?G.players[G.auction.highBidder].name:'なし';
+  const minBid=hb+10;
+  setMsg(`🔨 <b>${lab(G.auction.pos)}</b> オークション<br>定価: ${cell.p}万 ｜ 最高入札: ${hb>0?hb+'万 ('+hbn+')':'なし'}<br><b>${p.name}</b>の番`);
+  setAbtn(`<input id="bidAmt" type="number" min="${minBid}" step="10" value="${minBid}" style="width:70px;padding:4px 6px;border:1px solid var(--border2);border-radius:6px;font-size:14px;background:var(--s1);color:var(--text)"><button class="btn cta" onclick="doAuctionBid()">入札</button><button class="btn ghost" onclick="doAuctionPass()">パス</button>`);
+}
+window.doAuctionBid=async function(){
+  const amt=parseInt(document.getElementById('bidAmt')?.value)||0;
+  const p=G.players[G.cur];const minBid=G.auction.highBid+10;
+  if(amt<minBid){G.msg=`<span class="neg">最低${minBid}万以上で入札してください</span>`;await save();return;}
+  if(amt>p.money){G.msg=`<span class="neg">資金不足！</span>`;await save();return;}
+  G.auction.highBid=amt;G.auction.highBidder=G.cur;
+  addLog(`${p.name}が${amt}万入札`);
+  advanceAuction();await save();
+};
+window.doAuctionPass=async function(){
+  G.auction.passed.push(G.cur);
+  addLog(`${G.players[G.cur].name}がパス`);
+  advanceAuction();await save();
+};
+function advanceAuction(){
+  const order=G.auction.order;
+  const remaining=order.filter(i=>!G.auction.passed.includes(i));
+  if(remaining.length===0||(remaining.length===1&&G.auction.highBidder>=0&&remaining[0]===G.auction.highBidder)){
+    endAuction();return;
+  }
+  if(remaining.length===0){
+    G.msg=`🔨 入札者なし。<b>${lab(G.auction.pos)}</b>は誰も取得せず。`;
+    G.cur=G.auction.originalCur;G.ts='done';return;
+  }
+  const curIdx=order.indexOf(G.cur);
+  let next=(curIdx+1)%order.length;
+  while(G.auction.passed.includes(order[next]))next=(next+1)%order.length;
+  G.cur=order[next];G.ts='auction';
+}
+function endAuction(){
+  if(G.auction.highBidder<0){
+    G.msg=`🔨 入札者なし。<b>${lab(G.auction.pos)}</b>は誰も取得せず。`;
+    G.cur=G.auction.originalCur;G.ts='done';return;
+  }
+  const winner=G.auction.highBidder,pos=G.auction.pos;
+  const p=G.players[winner];
+  p.money-=G.auction.highBid;G.props[pos].own=winner;p.props.push(pos);
+  addLog(`${p.name}が${lab(pos)}を${G.auction.highBid}万で落札`);
+  G.msg=`🔨 <b>${p.name}</b>が<b>${lab(pos)}</b>を${G.auction.highBid}万で落札！`;
+  G.cur=G.auction.originalCur;G.ts='done';
+}
 window.doEnd=async function(){
   if(G.phase==='play1'&&G.play1Lapped.length>=G.players.filter(p=>!p.bust).length){
     G.phase='negotiate';G.cur=0;G.ts='negotiate';
