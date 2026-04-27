@@ -780,15 +780,23 @@ function runBotTurn(){
   if(G.phase==='buy'){
     // ボットの購入フェーズ：1件だけ購入するか、パス
     const oc=ownC(G.cur);
-    const buyable=[];
+    const humanPI=G.players.findIndex(pl=>!pl.isBot);
+    const humanOC=humanPI>=0?ownC(humanPI):[];
+    const alreadyContested=oc.some(c=>humanOC.includes(c));
+    const buyable=[],contested=[];
     B.forEach((b,i)=>{
       if(b.t!=='prop'&&b.t!=='railroad'&&b.t!=='utility')return;
       if(G.props[i].own!==-1)return;
       if(oc.includes(b.c)&&b.t==='prop')return;
-      if(b.p<=p.money-500)buyable.push(i);
+      if(b.p<=p.money-500){
+        buyable.push(i);
+        if(b.t==='prop'&&humanOC.includes(b.c))contested.push(i);
+      }
     });
-    const toBuy=buyable.length>0&&Math.random()<0.7
-      ?buyable[Math.floor(Math.random()*buyable.length)]:null;
+    // 未競合なら人間プレイヤーの色と被るマスを優先購入
+    const pool=(!alreadyContested&&contested.length>0)?contested:buyable;
+    const toBuy=pool.length>0&&Math.random()<0.7
+      ?pool[Math.floor(Math.random()*pool.length)]:null;
     if(toBuy!==null){
       G.props[toBuy].own=G.cur;p.props.push(toBuy);p.money-=B[toBuy].p;
       addLog(`${p.name}が${lab(toBuy)}を取得`);
@@ -919,6 +927,32 @@ function botEndTurn(){
   scheduleBotIfNeeded();
 }
 
+function ensureContestedColor(){
+  const humanPI=G.players.findIndex(p=>!p.isBot);
+  const botPIs=G.players.map((_,i)=>i).filter(i=>G.players[i].isBot);
+  if(humanPI<0||!botPIs.length)return;
+  const humanOC=ownC(humanPI);
+  const botOC=botPIs.flatMap(bi=>ownC(bi));
+  const contested=humanOC.filter(c=>botOC.includes(c));
+  if(contested.length>0)return; // 既に競合あり
+  // 競合なし → 人間が持つ色のうち、ボットが持っていないマスを1つ奪い取る
+  for(const c of humanOC){
+    const botPI=botPIs[0];
+    const botOwnColors=ownC(botPI);
+    if(botOwnColors.includes(c))continue; // ボットがすでにこの色を持っている
+    // この色の中でボットが持っていないマスを探す
+    const targets=G.players[humanPI].props.filter(i=>B[i].c===c&&B[i].t==='prop');
+    if(!targets.length)continue;
+    const swapI=targets[0];
+    // 所有権を移転（金銭調整なし・ゲーム開始前の再配置として扱う）
+    G.props[swapI].own=botPI;
+    G.players[botPI].props.push(swapI);
+    G.players[humanPI].props=G.players[humanPI].props.filter(x=>x!==swapI);
+    addLog(`開始配置調整: ${lab(swapI)}を${G.players[botPI].name}へ`);
+    break;
+  }
+}
+
 // ─── ゲーム開始 ───
 window.startGame=async function(){
   const s=await get(ref(db,`rooms/${ROOM}/players`));
@@ -1004,6 +1038,8 @@ window.doPassBuy=async function(){
   if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
   G.bpi=(G.bpi||0)+1;
   if(G.buyPassed.length>=G.players.filter(p=>!p.bust).length){
+    // 購入フェーズ終了時：色が一つも競合していなければ強制的に1色をスワップして交渉意義を確保
+    ensureContestedColor();
     G.phase='play1';G.cur=0;G.ts='roll';G.play1Lapped=[];
     G.msg=`ゲーム開始！<b>${G.players[0].name}</b>、サイコロを振ってください。<small style="color:var(--text2)"> 全員一周で交渉フェーズへ</small>`;
   }else{
