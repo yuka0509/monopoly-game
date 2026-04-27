@@ -472,7 +472,7 @@ const CMAP={brown:'#c07850',lb:'#38bdf8',pink:'#f472b6',orange:'#fb923c',
 const B=[
   {id:0,n:'GO 資金調達',t:'go',c:'none',p:0,r:[0]},
   {id:1,n:'クレープ屋',t:'prop',c:'brown',p:60,r:[2,10,30,90,160,250]},
-  {id:2,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:2,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:3,n:'ネットショップ',t:'prop',c:'brown',p:60,r:[4,20,60,180,320,450]},
   {id:4,n:'法人税',t:'tax',c:'none',p:200,r:[0]},
   {id:5,n:'南日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
@@ -480,17 +480,17 @@ const B=[
   {id:7,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:8,n:'動物保護カフェ',t:'prop',c:'lb',p:100,r:[6,30,90,270,400,550]},
   {id:9,n:'アパレル店舗',t:'prop',c:'lb',p:120,r:[8,40,100,300,450,600]},
-  {id:10,n:'刑務所',t:'jail',c:'none',p:0,r:[0]},
+  {id:10,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:11,n:'フィットネス',t:'prop',c:'pink',p:140,r:[10,50,150,450,625,750]},
   {id:12,n:'電力会社',t:'utility',c:'utility',p:150,r:[0]},
   {id:13,n:'コワーキング',t:'prop',c:'pink',p:140,r:[10,50,150,450,625,750]},
   {id:14,n:'クラウドSaaS',t:'prop',c:'pink',p:160,r:[12,60,180,500,700,900]},
   {id:15,n:'西日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
   {id:16,n:'映画館',t:'prop',c:'orange',p:180,r:[14,70,200,550,750,950]},
-  {id:17,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:17,n:'Zeronity 起業家クラス',t:'chance',c:'none',p:1,r:[0]},
   {id:18,n:'ビジホ',t:'prop',c:'orange',p:180,r:[14,70,200,550,750,950]},
   {id:19,n:'メタバース開発',t:'prop',c:'orange',p:200,r:[16,80,220,600,800,1000]},
-  {id:20,n:'駐車場 助成金',t:'parking',c:'none',p:0,r:[0]},
+  {id:20,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:21,n:'メガソーラー',t:'prop',c:'red',p:220,r:[18,90,250,700,875,1050]},
   {id:22,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:23,n:'物流センター',t:'prop',c:'red',p:220,r:[18,90,250,700,875,1050]},
@@ -500,10 +500,10 @@ const B=[
   {id:27,n:'タワマン',t:'prop',c:'yellow',p:260,r:[22,110,330,800,975,1150]},
   {id:28,n:'水道局',t:'utility',c:'utility',p:150,r:[0]},
   {id:29,n:'リゾート',t:'prop',c:'yellow',p:280,r:[24,120,360,850,1025,1200]},
-  {id:30,n:'刑務所へ',t:'gotojail',c:'none',p:0,r:[0]},
+  {id:30,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:31,n:'再エネ事業',t:'prop',c:'green',p:300,r:[26,130,390,900,1100,1275]},
   {id:32,n:'半導体工場',t:'prop',c:'green',p:300,r:[26,130,390,900,1100,1275]},
-  {id:33,n:'共同基金',t:'community',c:'none',p:0,r:[0]},
+  {id:33,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
   {id:34,n:'宇宙開発',t:'prop',c:'green',p:320,r:[28,150,450,1000,1200,1400]},
   {id:35,n:'東日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
   {id:36,n:'チャンス',t:'chance',c:'none',p:0,r:[0]},
@@ -858,7 +858,11 @@ function botLand(pi,pos){
   else if(cell.t==='tax'){addLog(`${p.name}税セーフ！`);G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.ts='done';}
-  else if(cell.t==='chance'){addLog(`${p.name}チャンス：セーフ！`);G.ts='done';}
+  else if(cell.t==='chance'){
+    if(cell.p>0){p.money-=cell.p;addLog(`${p.name} ${cell.n} -${cell.p}万`);chkBust(pi);}
+    else{addLog(`${p.name}チャンス：セーフ！`);}
+    G.ts='done';
+  }
   else if(cell.t==='community'){addLog(`${p.name}共同基金：セーフ！`);G.ts='done';}
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){
@@ -1045,7 +1049,11 @@ async function doLand(pi,pos){
   else if(cell.t==='tax'){G.msg=`✅ <b>${lab(pos)}</b>！支払いなし！セーフ！`;G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.msg='⛓ 刑務所へ！';G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.msg=`${lab(pos)}。通過。`;G.ts='done';}
-  else if(cell.t==='chance'){G.msg=`🎴 チャンス！<br>支払いなし！セーフ！`;G.ts='done';}
+  else if(cell.t==='chance'){
+    if(cell.p>0){p.money-=cell.p;G.msg=`🎴 <b>${cell.n}</b><br><span class="neg">-${cell.p}万円</span>`;chkBust(pi);}
+    else{G.msg=`🎴 チャンス！<br>支払いなし！セーフ！`;}
+    G.ts='done';
+  }
   else if(cell.t==='community'){G.msg=`📋 共同基金！<br>支払いなし！セーフ！`;G.ts='done';}
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){G.ts='buy_prop';G.pb=pos;G.msg=`📌 <b>${lab(pos)}</b>は空き！取得 ${cell.p}万円`;}
@@ -1317,9 +1325,6 @@ function drawBoard(){
     let in2='<div class="ci">';
     if(cell.c&&cell.c!=='none')in2+=`<div class="cs ${sd}" style="background:${CMAP[cell.c]}"></div>`;
     if(cell.t==='go')in2+=`<div style="font-size:16px;font-weight:900;color:var(--accent);font-family:Syne,sans-serif">GO</div><div style="font-size:8px;color:var(--text2)">資金調達</div>`;
-    else if(cell.t==='jail')in2+=`<div style="font-size:18px">🔒</div><div style="font-size:8px;color:var(--text2)">刑務所</div>`;
-    else if(cell.t==='gotojail')in2+=`<div style="font-size:16px;color:var(--red)">⛓</div><div style="font-size:8px;color:var(--text2)">→刑務所</div>`;
-    else if(cell.t==='parking')in2+=`<div style="font-size:16px;color:var(--accent)">🅿</div><div style="font-size:8px;color:var(--text2)">助成金</div>`;
     else if(cell.t==='tax')in2+=`<div style="font-size:16px">💸</div><div class="cn">${lab(idx)}</div>`;
     else if(cell.t==='chance')in2+=`<div style="font-size:22px;font-weight:900;color:var(--amber)">?</div><div style="font-size:8px;color:var(--text2)">チャンス</div>`;
     else if(cell.t==='community')in2+=`<div style="font-size:18px">📋</div><div style="font-size:8px;color:var(--text2)">共同基金</div>`;
