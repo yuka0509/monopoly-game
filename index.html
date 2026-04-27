@@ -1145,7 +1145,8 @@ function drawBoard(){
     else{
       in2+=`<div class="cn">${lab(idx)}</div>`;
       if(cell.t==='prop'){
-        in2+=`<div class="cp-row"><span>購入:${cell.p}万</span><span>独占:${cell.r[0]*2}万</span></div>`;
+        in2+=`<div class="cp">購入:${cell.p}万</div>`;
+        in2+=`<div class="cp-row"><span>通常:${cell.r[0]}万</span><span>独占:${cell.r[0]*2}万</span></div>`;
         const bc=Math.floor(cell.p/2);
         in2+=`<div class="crt"><div class="crt-hd">投資 ${bc}万/件</div><div class="crt-g">`;
         ['1','2','3','4','H'].forEach((lbl,i)=>{const lv=i+1;in2+=`<div class="crt-v${pr.h===lv?' act':''}">${lbl}:${cell.r[lv]}万</div>`;});
