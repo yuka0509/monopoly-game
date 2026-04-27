@@ -988,7 +988,7 @@ function renderBuyUI(){
       <span style="font-size:9px;color:var(--text2)">${b.p}万</span></div>`;
   });
   g+='</div>';
-  setAbtn(g+`<button class="btn amber" onclick="doPassBuy()">パスして次へ →</button>`);
+  setAbtn(g+`<button class="btn amber" onclick="doPassBuy()">パスして次へ →</button><button class="btn ghost" style="font-size:10px;opacity:0.6" onclick="skipToPlay1()" title="テスト用">⏭ 購入フェーズをスキップ</button>`);
 }
 window.doBuyPhase=async function(i){
   const pi=G.cur,p=G.players[pi],b=B[i];
@@ -1018,6 +1018,7 @@ function renderRollUI(){
   let h=`<button class="btn cta" onclick="doRoll()">🎲 サイコロを振る</button>`;
   if(G.phase==='play')h+=`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button>`;
   if(G.phase==='play'&&canBld(G.cur))h+=`<button class="btn ghost" onclick="openBld()">🏗️ 投資する</button>`;
+  if(G.phase==='play1')h+=`<button class="btn ghost" style="font-size:10px;opacity:0.6" onclick="skipToNegotiate()" title="テスト用">⏭ 交渉フェーズへ</button>`;
   setAbtn(h);
 }
 function renderBuyPropUI(){
@@ -1158,6 +1159,15 @@ window.doEnd=async function(){
 };
 window.doStartPlay=async function(){
   G.phase='play';G.cur=0;G.ts='roll';G.msg=`ゲーム再開！<b>${G.players[0].name}</b>のターン。`;await save();
+};
+window.skipToPlay1=async function(){
+  G.phase='play1';G.cur=0;G.ts='roll';G.play1Lapped=[];
+  G.msg=`⏭ テスト: ゲーム開始！<b>${G.players[0].name}</b>、サイコロを振ってください。`;await save();
+};
+window.skipToNegotiate=async function(){
+  const alive=G.players.map((_,i)=>i).filter(i=>!G.players[i].bust);
+  G.play1Lapped=alive;G.phase='negotiate';G.cur=0;G.ts='negotiate';
+  G.msg=`⏭ テスト: 交渉フェーズに移動しました。`;await save();
 };
 function chkBust(pi){
   const p=G.players[pi];if(p.money>0)return;
