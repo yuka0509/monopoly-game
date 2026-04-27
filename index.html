@@ -744,7 +744,7 @@ function isBotTurn(){return G.players&&isBot(G.cur);}
 function scheduleBotIfNeeded(){
   if(!BOT_MODE||!G.players)return;
   if(!isBotTurn())return;
-  setTimeout(()=>runBotTurn(),1200);
+  setTimeout(()=>runBotTurn(),2500);
 }
 
 function runBotTurn(){
@@ -801,7 +801,7 @@ function runBotTurn(){
     if(p.jail){p.jt++;if(p.jt>=3||d1===d2){p.jail=false;p.jt=0;}else{G.ts='done';botEndTurn();return;}}
     const old=p.pos;p.pos=(p.pos+d1+d2)%40;
     if(p.pos<old){p.money+=2000;addLog(`${p.name}GO通過+2000万`);}
-    if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);}
+    if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);p.money+=100;addLog(`${p.name}一周完了 +100万`);}
     addLog(`${p.name}→${lab(p.pos)}`);
     drawBoard();
     botLand(G.cur,p.pos);
@@ -852,7 +852,7 @@ function botLand(pi,pos){
   }else{G.ts='done';}
   G.msg=`${p.name}が${lab(pos)}に止まりました。`;
   drawBoard();drawSide();updateUI();
-  setTimeout(()=>botEndTurn(),800);
+  setTimeout(()=>botEndTurn(),2500);
 }
 
 function botEndTurn(){
@@ -873,12 +873,11 @@ function botEndTurn(){
     });
   }
 
-  if(G.phase==='play1'&&G.play1Lapped.length>=G.players.filter(p=>!p.bust).length){
+  const alive=G.players.filter(p=>!p.bust);
+  if(G.phase==='play1'&&G.play1Lapped.length>=alive.length){
     G.phase='negotiate';G.cur=0;G.ts='negotiate';
-    G.msg='交渉フェーズ！準備ができたら「ゲーム開始」を押してください。';
-    drawBoard();drawSide();updateUI();
-    // 全員ボットなら自動でゲーム開始（起こりえないが念のため）
-    return;
+    G.msg='🤝 全員一周完了！交渉フェーズに入ります。準備ができたら「ゲーム開始」を押してください。';
+    drawBoard();drawSide();updateUI();return;
   }
   let n=(G.cur+1)%G.players.length;
   while(G.players[n].bust&&n!==G.cur)n=(n+1)%G.players.length;
@@ -1000,7 +999,7 @@ window.doRoll=async function(){
   if(p.jail){p.jt++;if(p.jt>=3||d1===d2){p.jail=false;p.jt=0;}else{G.ts='done';G.msg='拘留継続。';await save();return;}}
   const old=p.pos;p.pos=(p.pos+d1+d2)%40;
   if(p.pos<old){p.money+=2000;addLog(`${p.name}GO通過+2000万`);}
-  if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);addLog(`${p.name}一周完了`);}
+  if(G.phase==='play1'&&p.pos<old&&!G.play1Lapped.includes(G.cur)){G.play1Lapped.push(G.cur);p.money+=100;addLog(`${p.name}一周完了 +100万`);}
   addLog(`${p.name}→${lab(p.pos)}`);
   await doLand(G.cur,p.pos);
 };
@@ -1098,13 +1097,16 @@ function endAuction(){
   G.cur=G.auction.originalCur;G.ts='done';
 }
 window.doEnd=async function(){
-  if(G.phase==='play1'&&G.play1Lapped.length>=G.players.filter(p=>!p.bust).length){
+  const alive=G.players.filter(p=>!p.bust);
+  if(G.phase==='play1'&&G.play1Lapped.length>=alive.length){
     G.phase='negotiate';G.cur=0;G.ts='negotiate';
-    G.msg='交渉フェーズ！同一色を揃えると投資が可能になります。';await save();return;
+    G.msg='🤝 全員一周完了！交渉フェーズに入ります。同一色を揃えると投資が可能になります。';await save();return;
   }
   let n=(G.cur+1)%G.players.length;
   while(G.players[n].bust&&n!==G.cur)n=(n+1)%G.players.length;
-  G.cur=n;G.ts='roll';G.msg=`<b>${G.players[n].name}</b>のターン。`;await save();
+  G.cur=n;G.ts='roll';
+  const lapped=G.phase==='play1'?` (一周済み: ${G.play1Lapped.length}/${alive.length}名)`:'';
+  G.msg=`<b>${G.players[n].name}</b>のターン。${lapped}`;await save();
 };
 window.doStartPlay=async function(){
   G.phase='play';G.cur=0;G.ts='roll';G.msg=`ゲーム再開！<b>${G.players[0].name}</b>のターン。`;await save();
