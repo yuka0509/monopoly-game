@@ -752,7 +752,7 @@ function runBotTurn(){
   const p=G.players[G.cur];
 
   if(G.phase==='buy'){
-    // ボットの購入フェーズ：買えるものをランダムに1〜2個買う
+    // ボットの購入フェーズ：1件だけ購入するか、パス
     const oc=ownC(G.cur);
     const buyable=[];
     B.forEach((b,i)=>{
@@ -761,16 +761,15 @@ function runBotTurn(){
       if(oc.includes(b.c)&&b.t==='prop')return;
       if(b.p<=p.money)buyable.push(i);
     });
-    // ランダムに1〜2個購入
-    const toPurchase=buyable.sort(()=>Math.random()-0.5).slice(0,Math.floor(Math.random()*2)+1);
-    toPurchase.forEach(i=>{
-      if(G.props[i].own===-1&&B[i].p<=p.money){
-        G.props[i].own=G.cur;p.props.push(i);p.money-=B[i].p;
-        addLog(`${p.name}が${lab(i)}を取得`);
-      }
-    });
-    // パス
-    if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
+    const toBuy=buyable.length>0&&Math.random()<0.7
+      ?buyable[Math.floor(Math.random()*buyable.length)]:null;
+    if(toBuy!==null){
+      G.props[toBuy].own=G.cur;p.props.push(toBuy);p.money-=B[toBuy].p;
+      addLog(`${p.name}が${lab(toBuy)}を取得`);
+      G.buyPassed=[];
+    }else{
+      if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
+    }
     G.bpi=(G.bpi||0)+1;
     if(G.buyPassed.length>=G.players.filter(pl=>!pl.bust).length){
       G.phase='play1';G.cur=0;G.ts='roll';G.play1Lapped=[];
@@ -940,7 +939,11 @@ window.doBuyPhase=async function(i){
   const pi=G.cur,p=G.players[pi],b=B[i];
   if(G.props[i].own!==-1||b.p>p.money)return;
   G.props[i].own=pi;p.props.push(i);p.money-=b.p;
-  addLog(`${p.name}が${lab(i)}を取得`);G.msg=`<b>${lab(i)}</b>を取得！残り <b>${p.money.toLocaleString()}万円</b>`;
+  addLog(`${p.name}が${lab(i)}を取得`);
+  G.buyPassed=[];
+  G.bpi=(G.bpi||0)+1;
+  G.cur=G.bpi%G.players.length;
+  G.msg=`<b>${lab(i)}</b>を取得！次は<b>${G.players[G.cur].name}</b>の番です。`;
   await save();
 };
 window.doPassBuy=async function(){
