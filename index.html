@@ -123,34 +123,34 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 /* ── GAME ── */
 #ghdr{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-#glayout{display:grid;grid-template-columns:1fr 236px;flex:1;min-height:0;overflow:hidden}
-#board-col{padding:10px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
+#glayout{display:grid;grid-template-columns:1fr 260px;flex:1;min-height:0;overflow:hidden}
+#board-col{padding:16px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
   background:var(--bg)}
-#board-wrap{width:100%;max-width:780px}
+#board-wrap{width:100%;max-width:1100px}
 #board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);
-  gap:1.5px;background:var(--border);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%}
+  gap:2px;background:var(--border);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%}
 .cell{background:var(--s1);display:flex;flex-direction:column;align-items:center;
   justify-content:center;position:relative;overflow:hidden;transition:background 0.1s}
 .cell.mid{background:var(--bg)}
 .cell.here{background:rgba(0,245,160,0.07)!important}
 .ci{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;width:100%;height:100%;position:relative;z-index:1}
-.cn{font-size:7px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 2px}
-.cp{font-size:6px;color:var(--text2)}
+.cn{font-size:11px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 3px}
+.cp{font-size:9px;color:var(--text2)}
 .cs{position:absolute;opacity:0.9}
-.cs.t{top:0;left:0;right:0;height:7px}
-.cs.b{bottom:0;left:0;right:0;height:7px}
-.cs.l{left:0;top:0;bottom:0;width:7px}
-.cs.r{right:0;top:0;bottom:0;width:7px}
-.om{position:absolute;top:4px;left:3px;width:8px;height:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.4)}
-.ivd{display:flex;gap:1.5px;flex-wrap:wrap;justify-content:center;margin-top:2px}
-.ip{width:5.5px;height:5.5px;border-radius:1px}
+.cs.t{top:0;left:0;right:0;height:11px}
+.cs.b{bottom:0;left:0;right:0;height:11px}
+.cs.l{left:0;top:0;bottom:0;width:11px}
+.cs.r{right:0;top:0;bottom:0;width:11px}
+.om{position:absolute;top:5px;left:4px;width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.4)}
+.ivd{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+.ip{width:9px;height:9px;border-radius:1.5px}
 .ip.h{background:var(--accent)}
 .ip.ht{background:var(--red)}
 .tok-l{position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:flex-end;
   justify-content:flex-end;padding:1px;gap:0.5px;z-index:5}
-.tok{width:15px;height:15px;border-radius:50%;border:2px solid var(--bg);
-  display:flex;align-items:center;justify-content:center;font-size:7px;
+.tok{width:22px;height:22px;border-radius:50%;border:2px solid var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:11px;
   font-weight:700;color:white;flex-shrink:0;box-shadow:0 0 4px rgba(0,0,0,0.5)}
 
 /* ── SIDEBAR ── */
@@ -217,8 +217,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 /* ── CELL RENT TABLE ── */
 .crt{width:100%;margin-top:1px;border-top:0.5px solid rgba(255,255,255,0.1)}
-.crth{display:flex;justify-content:space-between;padding:0 2px;font-size:3.5px;color:var(--text3);line-height:1.3}
-.crtr{display:flex;justify-content:space-between;padding:0 2px;font-size:4.5px;color:var(--text2);line-height:1.3}
+.crth{display:flex;justify-content:space-between;padding:0 3px;font-size:6px;color:var(--text3);line-height:1.4}
+.crtr{display:flex;justify-content:space-between;padding:0 3px;font-size:8px;color:var(--text2);line-height:1.4}
 .crtr.act{color:var(--accent);font-weight:700}
 
 /* ── WAITING / NOT MY TURN ── */
@@ -1122,7 +1122,7 @@ function drawBoard(){
     const div=document.createElement('div');div.className='cell';
     if(r>0&&r<10&&c>0&&c<10){
       div.classList.add('mid');
-      if(r===5&&c===5)div.innerHTML=`<div style="text-align:center;padding:4px"><div style="font-size:14px">🚀</div><div style="font-size:5px;font-weight:800;color:var(--accent);font-family:Syne,sans-serif;line-height:1.3">起業体験<br>モノポリー</div></div>`;
+      if(r===5&&c===5)div.innerHTML=`<div style="text-align:center;padding:6px"><div style="font-size:26px">🚀</div><div style="font-size:9px;font-weight:800;color:var(--accent);font-family:Syne,sans-serif;line-height:1.3">起業体験<br>モノポリー</div></div>`;
       bd.appendChild(div);continue;
     }
     const idx=GRID[r][c];if(idx===null){bd.appendChild(div);continue;}
@@ -1131,13 +1131,13 @@ function drawBoard(){
     let sd='t';if(r===10)sd='b';else if(r===0)sd='t';else if(c===0)sd='l';else sd='r';
     let in2='<div class="ci">';
     if(cell.c&&cell.c!=='none')in2+=`<div class="cs ${sd}" style="background:${CMAP[cell.c]}"></div>`;
-    if(cell.t==='go')in2+=`<div style="font-size:8px;font-weight:900;color:var(--accent);font-family:Syne,sans-serif">GO</div><div style="font-size:4px;color:var(--text2)">資金調達</div>`;
-    else if(cell.t==='jail')in2+=`<div style="font-size:10px">🔒</div><div style="font-size:4px;color:var(--text2)">刑務所</div>`;
-    else if(cell.t==='gotojail')in2+=`<div style="font-size:9px;color:var(--red)">⛓</div><div style="font-size:4px;color:var(--text2)">→刑務所</div>`;
-    else if(cell.t==='parking')in2+=`<div style="font-size:9px;color:var(--accent)">🅿</div><div style="font-size:4px;color:var(--text2)">助成金</div>`;
-    else if(cell.t==='tax')in2+=`<div style="font-size:9px">💸</div><div class="cn">${lab(idx)}</div>`;
-    else if(cell.t==='chance')in2+=`<div style="font-size:11px;font-weight:900;color:var(--amber)">?</div>`;
-    else if(cell.t==='community')in2+=`<div style="font-size:9px">📋</div>`;
+    if(cell.t==='go')in2+=`<div style="font-size:16px;font-weight:900;color:var(--accent);font-family:Syne,sans-serif">GO</div><div style="font-size:8px;color:var(--text2)">資金調達</div>`;
+    else if(cell.t==='jail')in2+=`<div style="font-size:18px">🔒</div><div style="font-size:8px;color:var(--text2)">刑務所</div>`;
+    else if(cell.t==='gotojail')in2+=`<div style="font-size:16px;color:var(--red)">⛓</div><div style="font-size:8px;color:var(--text2)">→刑務所</div>`;
+    else if(cell.t==='parking')in2+=`<div style="font-size:16px;color:var(--accent)">🅿</div><div style="font-size:8px;color:var(--text2)">助成金</div>`;
+    else if(cell.t==='tax')in2+=`<div style="font-size:16px">💸</div><div class="cn">${lab(idx)}</div>`;
+    else if(cell.t==='chance')in2+=`<div style="font-size:22px;font-weight:900;color:var(--amber)">?</div><div style="font-size:8px;color:var(--text2)">チャンス</div>`;
+    else if(cell.t==='community')in2+=`<div style="font-size:18px">📋</div><div style="font-size:8px;color:var(--text2)">共同基金</div>`;
     else{
       in2+=`<div class="cn">${lab(idx)}</div><div class="cp">${cell.p}万</div>`;
       if(cell.t==='prop'){
