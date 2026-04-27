@@ -759,7 +759,7 @@ function runBotTurn(){
       if(b.t!=='prop'&&b.t!=='railroad'&&b.t!=='utility')return;
       if(G.props[i].own!==-1)return;
       if(oc.includes(b.c)&&b.t==='prop')return;
-      if(b.p<=p.money)buyable.push(i);
+      if(b.p<=p.money-500)buyable.push(i);
     });
     const toBuy=buyable.length>0&&Math.random()<0.7
       ?buyable[Math.floor(Math.random()*buyable.length)]:null;
@@ -837,7 +837,7 @@ function botLand(pi,pos){
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){
       // ボットは買える場合70%の確率で購入
-      if(p.money>=cell.p&&Math.random()<0.7){
+      if(p.money-cell.p>=500&&Math.random()<0.7){
         G.props[pos].own=pi;p.props.push(pos);p.money-=cell.p;
         addLog(`${p.name}が${lab(pos)}を取得`);
       }
