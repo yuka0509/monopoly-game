@@ -754,7 +754,7 @@ window.launchBotGame=function(botCount){
     players.push({name:BOT_NAMES[i],uid:'bot_'+i,money:1500,pos:0,color:PC[i+1],props:[],jail:false,jt:0,bust:false,b2x:false,isBot:true});
   }
   G={
-    players,props:B.map(()=>({own:-1,h:0})),
+    players,props:B.map(()=>({own:-1,h:0,mort:false})),
     cur:0,phase:'buy',bpi:0,buyPassed:[],play1Lapped:[],
     dice:[1,1],log:[],ts:'buy_select',pb:null,
     msg:`ゲーム開始！<b>${players[0].name}</b>、事業を購入してください。`
@@ -873,6 +873,7 @@ function botLand(pi,pos){
       }
       G.ts='done';
     }else if(pr.own===pi){G.ts='done';}
+    else if(pr.mort){addLog(`${lab(pos)}は抵当中`);G.ts='done';}
     else{
       const ow=G.players[pr.own];let rent=calcR(pos,pr);
       if(ow.b2x){rent*=2;ow.b2x=false;}
@@ -924,7 +925,7 @@ window.startGame=async function(){
   if(arr.length<2){alert('2人以上必要です');return;}
   const gs={
     players:arr.map((p,i)=>({name:p.name,uid:p.uid,money:1500,pos:0,color:PC[i],props:[],jail:false,jt:0,bust:false,b2x:false})),
-    props:B.map(()=>({own:-1,h:0})),
+    props:B.map(()=>({own:-1,h:0,mort:false})),
     cur:0,phase:'buy',bpi:0,buyPassed:[],play1Lapped:[],
     dice:[1,1],log:[],ts:'buy_select',pb:null,msg:'ゲーム開始！初期購入フェーズです。'
   };
@@ -968,7 +969,7 @@ function updateUI(){
     if(G.ts==='trade_offer'){renderTradeOfferUI();return;}
     if(BOT_MODE) G.cur=G.players.findIndex(p=>!p.isBot&&!p.bust);
     setMsg('全員で自由に交渉・取引ができます。同一色を揃えると投資が可能です。');
-    setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
+    setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn amber" onclick="openMort()">🔒 抵当</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
   }
 }
 
@@ -1028,6 +1029,7 @@ function renderDoneUI(){
   let h=`<button class="btn cta" onclick="doEnd()">ターン終了 →</button>`;
   if(G.phase==='play')h+=`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button>`;
   if(G.phase==='play'&&canBld(G.cur))h+=`<button class="btn ghost" onclick="openBld()">🏗️ 投資する</button>`;
+  if(G.players[G.cur].props.length)h+=`<button class="btn amber" onclick="openMort()">🔒 抵当</button>`;
   setAbtn(h);
 }
 
@@ -1058,6 +1060,7 @@ async function doLand(pi,pos){
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){G.ts='buy_prop';G.pb=pos;G.msg=`📌 <b>${lab(pos)}</b>は空き！取得 ${cell.p}万円`;}
     else if(pr.own===pi){G.msg=`自分の事業。`;G.ts='done';}
+    else if(pr.mort){G.msg=`<b>${lab(pos)}</b>は抵当中。家賃なし。`;G.ts='done';}
     else{
       const ow=G.players[pr.own];let rent=calcR(pos,pr);
       if(ow.b2x){rent*=2;ow.b2x=false;}
@@ -1181,6 +1184,47 @@ window.openBld=function(){
   })));
 };
 
+// ─── 抵当 ───
+window.openMort=function(){
+  const pi=G.cur,p=G.players[pi];
+  if(!p.props.length){setMsg('所有事業がありません。');return;}
+  const rows=p.props.map(i=>{
+    const cell=B[i],pr=G.props[i],isMort=pr.mort===true;
+    if(isMort){
+      const cost=Math.ceil(cell.p*1.1);
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:${CMAP[cell.c]};opacity:0.35"></div>
+        <span style="font-size:11px;color:var(--text2)">${lab(i)} <span style="font-size:9px;color:var(--amber)">抵当中</span></span></div>
+        <button class="btn amber" style="font-size:10px;padding:3px 8px" onclick="doUnmort(${i})">解除 ${cost}万</button></div>`;
+    }else{
+      const gain=Math.floor(cell.p/2);
+      return`<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:8px;height:8px;border-radius:50%;background:${CMAP[cell.c]}"></div>
+        <span style="font-size:11px">${lab(i)}</span></div>
+        <button class="btn ghost" style="font-size:10px;padding:3px 8px" onclick="doMort(${i})">抵当 +${gain}万</button></div>`;
+    }
+  }).join('');
+  $('mt').textContent='🔒 抵当 / 抵当解除';
+  $('mb').innerHTML=`<div style="font-size:9px;color:var(--text3);margin-bottom:6px">抵当価格: 購入額の半額　解除: 購入額×1.1</div>`+rows;
+  $('mbtns').innerHTML=`<button class="btn ghost" onclick="hideModal()">閉じる</button>`;
+  $('mw').classList.add('on');
+};
+window.doMort=async function(i){
+  const p=G.players[G.cur],gain=Math.floor(B[i].p/2);
+  G.props[i].mort=true;p.money+=gain;
+  addLog(`${p.name}が${lab(i)}を抵当`);
+  G.msg=`🔒 <b>${lab(i)}</b>を抵当に入れました。<b>+${gain}万</b>`;
+  hideModal();await save();
+};
+window.doUnmort=async function(i){
+  const p=G.players[G.cur],cost=Math.ceil(B[i].p*1.1);
+  if(p.money<cost){G.msg=`<span class="neg">資金不足！解除に${cost}万必要です。</span>`;hideModal();await save();return;}
+  G.props[i].mort=false;p.money-=cost;
+  addLog(`${p.name}が${lab(i)}の抵当解除`);
+  G.msg=`🔓 <b>${lab(i)}</b>の抵当を解除しました。<span class="neg">-${cost}万</span>`;
+  hideModal();await save();
+};
+
 // ─── 取引 ───
 window.openTrd=function(){
   const oth=G.players.filter((_,i)=>i!==G.cur&&!G.players[i].bust);
@@ -1192,9 +1236,9 @@ window.openTrd=function(){
 window.openTrdWith=function(ti){
   window._ts={give:[],recv:[]};
   const mp=G.players[G.cur].props,tp=G.players[ti].props;
-  const pb=(i,side)=>`<div class="pbtn" data-tside="${side}" onclick="selT('${side}',${i},this)">
-    <span class="pdt" style="background:${CMAP[B[i].c]}"></span>${lab(i)}<br>
-    <span style="font-size:9px;color:var(--text2)">${B[i].p}万</span></div>`;
+  const pb=(i,side)=>{const mort=G.props[i]?.mort;return`<div class="pbtn" data-tside="${side}" onclick="selT('${side}',${i},this)">
+    <span class="pdt" style="background:${CMAP[B[i].c]};${mort?'opacity:0.4':''}"></span>${lab(i)}${mort?'<span style="font-size:8px;color:var(--amber)"> [抵当]</span>':''}<br>
+    <span style="font-size:9px;color:var(--text2)">${B[i].p}万</span></div>`;};
   $('mt').textContent=`${G.players[ti].name}と取引`;
   $('mb').innerHTML=`
     <div style="font-size:9px;color:var(--text3);margin-bottom:6px">事業は複数選択できます</div>
@@ -1372,7 +1416,7 @@ function drawSide(){
   po.innerHTML=G.players.map((p,pi)=>{
     if(p.bust)return'';
     const chips=p.props.length
-      ?p.props.map(i=>`<div class="pown-chip"><div class="pown-dot" style="background:${CMAP[B[i].c]}"></div>${B[i].n}</div>`).join('')
+      ?p.props.map(i=>{const m=G.props[i]?.mort;return`<div class="pown-chip"${m?' style="opacity:0.6"':''}><div class="pown-dot" style="background:${CMAP[B[i].c]};${m?'opacity:0.4':''}"></div>${B[i].n}${m?'<span style="font-size:6px;color:var(--amber);margin-left:2px">抵当</span>':''}</div>`;}).join('')
       :`<div style="font-size:8px;color:var(--text3)">なし</div>`;
     return`<div class="pown"><div class="pown-hd" style="color:${p.color}">${p.name}</div><div class="pown-chips">${chips}</div></div>`;
   }).join('');
