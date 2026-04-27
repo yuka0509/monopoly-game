@@ -123,7 +123,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 /* ── GAME ── */
 #ghdr{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-#glayout{display:grid;grid-template-columns:1fr 220px;flex:1;min-height:0;overflow:hidden}
+#glayout{display:grid;grid-template-columns:1fr 280px;flex:1;min-height:0;overflow:hidden}
 #board-col{padding:12px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
   background:var(--bg)}
 #board-wrap{width:100%}
@@ -172,7 +172,18 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .pown-chips{display:flex;flex-wrap:wrap;gap:3px}
 .pown-chip{font-size:7.5px;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;display:flex;align-items:center;gap:2px;color:var(--text);line-height:1.3}
 .pown-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-#ap{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
+#ap{flex-shrink:0;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;max-height:50vh}
+#chatbox{flex:1;display:flex;flex-direction:column;border-top:1px solid var(--border);min-height:160px;overflow:hidden}
+#chatbox-hdr{padding:6px 10px 2px;flex-shrink:0}
+#chatmsgs{flex:1;overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column;gap:3px;min-height:0}
+.chatmsg{font-size:11px;line-height:1.4;padding:4px 8px;border-radius:7px;max-width:92%;word-break:break-all}
+.chatmsg.me{background:var(--accent-dim);align-self:flex-end;border:1px solid var(--accent-glow)}
+.chatmsg.them{background:var(--s2);align-self:flex-start;border:1px solid var(--border)}
+.chat-name{font-size:8.5px;font-weight:700;color:var(--text2);display:block;margin-bottom:1px}
+#chatinput{display:flex;gap:4px;padding:5px 8px;border-top:1px solid var(--border);flex-shrink:0}
+#chatinput input{flex:1;font-size:11px;padding:4px 7px;border:1px solid var(--border2);border-radius:6px;background:var(--s2);color:var(--text);outline:none}
+#chatinput input:focus{border-color:var(--accent)}
+#chatinput button{font-size:11px;padding:4px 10px;background:var(--accent);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:700;white-space:nowrap}
 .alb{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
 #amsg{font-size:12px;line-height:1.6;padding:10px;background:var(--s2);
   border-radius:9px;border:1px solid var(--border);min-height:48px}
@@ -415,6 +426,14 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
         <div id="logbox">
           <div class="alb" style="margin-bottom:4px">ログ</div>
           <div id="loglist"></div>
+        </div>
+      </div>
+      <div id="chatbox">
+        <div id="chatbox-hdr"><div class="alb">チャット</div></div>
+        <div id="chatmsgs"></div>
+        <div id="chatinput">
+          <input id="chattext" type="text" placeholder="メッセージを送る..." maxlength="100" onkeydown="if(event.key==='Enter')doSendChat()">
+          <button onclick="doSendChat()">送信</button>
         </div>
       </div>
     </div>
@@ -727,8 +746,9 @@ document.addEventListener('launch-bot',function(e){
   window.launchBotGame(e.detail.count);
 });
 
+let localChat=[];
 window.launchBotGame=function(botCount){
-  BOT_MODE=true;
+  BOT_MODE=true;localChat=[];
   const players=[{name:ME.name,uid:ME.uid,money:1500,pos:0,color:PC[0],props:[],jail:false,jt:0,bust:false,b2x:false}];
   for(let i=0;i<botCount;i++){
     players.push({name:BOT_NAMES[i],uid:'bot_'+i,money:1500,pos:0,color:PC[i+1],props:[],jail:false,jt:0,bust:false,b2x:false,isBot:true});
@@ -910,6 +930,10 @@ function listenGame(roomId){
   onValue(ref(db,`rooms/${roomId}/gameState`),s=>{
     if(!s.val())return;G=s.val();drawBoard();drawSide();updateUI();
   });
+  onValue(ref(db,`rooms/${roomId}/chat`),s=>{
+    const msgs=Object.values(s.val()||{}).sort((a,b)=>a.ts-b.ts);
+    renderChat(msgs);
+  });
 }
 function isMe(){if(!G.players)return false;const p=G.players[G.cur];if(BOT_MODE)return p?.uid===ME.uid;return p?.uid===ME.uid;}
 
@@ -924,15 +948,20 @@ function updateUI(){
   if(G.dice){$('d1').textContent=DF[G.dice[0]];$('d2').textContent=DF[G.dice[1]];$('ds').textContent=`= ${G.dice[0]+G.dice[1]}`;}
   if(G.log)$('loglist').innerHTML=(G.log||[]).slice(0,10).map(l=>`<div>${l}</div>`).join('');
   if(G.phase==='end'){setAbtn(`<button class="btn cta" onclick="location.reload()">もう一度プレイ</button>`);return;}
-  if(!isMe()){setAbtn(`<div class="waiting-overlay"><div class="spinner"></div>${p?.name}のターンを待っています...</div>`);return;}
+  if(!isMe()){
+    if(G.ts==='trade_offer'&&BOT_MODE&&isBotTurn()){botHandleTradeOffer();return;}
+    setAbtn(`<div class="waiting-overlay"><div class="spinner"></div>${p?.name}のターンを待っています...</div>`);return;
+  }
   // 自分のターン
   if(G.phase==='buy'){renderBuyUI();}
   else if(G.phase==='play1'||G.phase==='play'){
     if(G.ts==='roll')renderRollUI();
     else if(G.ts==='buy_prop')renderBuyPropUI();
     else if(G.ts==='auction')renderAuctionUI();
+    else if(G.ts==='trade_offer')renderTradeOfferUI();
     else if(G.ts==='done')renderDoneUI();
   }else if(G.phase==='negotiate'){
+    if(G.ts==='trade_offer'){renderTradeOfferUI();return;}
     if(BOT_MODE) G.cur=G.players.findIndex(p=>!p.isBot&&!p.bust);
     setMsg('全員で自由に交渉・取引ができます。同一色を揃えると投資が可能です。');
     setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
@@ -1179,11 +1208,73 @@ window.selT=function(side,i,el){
 };
 window.execTrd=async function(ti){
   const{give,recv}=window._ts,cash=parseInt($('tcash').value)||0;
-  const me=G.players[G.cur],them=G.players[ti];
-  give.forEach(i=>{G.props[i].own=ti;them.props.push(i);me.props=me.props.filter(x=>x!==i);});
-  recv.forEach(i=>{G.props[i].own=G.cur;me.props.push(i);them.props=them.props.filter(x=>x!==i);});
-  if(cash>0){me.money+=cash;them.money-=cash;}
-  addLog(`${me.name}↔${them.name}取引`);G.msg='✅ 取引完了！';hideModal();await save();
+  const me=G.players[G.cur];
+  G.tradeOffer={from:G.cur,to:ti,give:[...give],recv:[...recv],cash,
+    originalCur:G.cur,originalTs:G.ts,originalPhase:G.phase};
+  G.cur=ti;G.ts='trade_offer';
+  G.msg=`🤝 <b>${me.name}</b>から取引提案が届いています。確認してください。`;
+  hideModal();await save();
+};
+function renderTradeOfferUI(){
+  const o=G.tradeOffer;if(!o)return;
+  const from=G.players[o.from];
+  const youGet=o.give.length?o.give.map(i=>`<b>${lab(i)}</b>`).join('・'):'なし';
+  const youGive=o.recv.length?o.recv.map(i=>`<b>${lab(i)}</b>`).join('・'):'なし';
+  const cashTxt=o.cash>0?`<br>現金: <b>+${o.cash}万</b>`:'';
+  setMsg(`🤝 <b>${from.name}</b>からの取引提案<br>あなたが受取る: ${youGet}${cashTxt}<br>あなたが渡す: ${youGive}`);
+  setAbtn(`<button class="btn cta" onclick="doAcceptTrade()">✅ 承諾する</button><button class="btn ghost" onclick="doRejectTrade()">❌ 断る</button>`);
+}
+window.doAcceptTrade=async function(){
+  const o=G.tradeOffer;if(!o)return;
+  const me=G.players[o.from],them=G.players[o.to];
+  o.give.forEach(i=>{G.props[i].own=o.to;them.props.push(i);me.props=me.props.filter(x=>x!==i);});
+  o.recv.forEach(i=>{G.props[i].own=o.from;me.props.push(i);them.props=them.props.filter(x=>x!==i);});
+  if(o.cash>0){me.money+=o.cash;them.money-=o.cash;}
+  addLog(`${them.name}が取引を承諾`);
+  G.msg=`✅ <b>${them.name}</b>が取引を承諾しました！`;
+  G.tradeOffer=null;G.cur=o.originalCur;G.ts=o.originalTs;await save();
+};
+window.doRejectTrade=async function(){
+  const o=G.tradeOffer;if(!o)return;
+  addLog(`${G.players[o.to].name}が取引を拒否`);
+  G.msg=`❌ <b>${G.players[o.to].name}</b>が取引を断りました。`;
+  G.tradeOffer=null;G.cur=o.originalCur;G.ts=o.originalTs;await save();
+};
+function botHandleTradeOffer(){
+  const o=G.tradeOffer;if(!o)return;
+  const botGets=o.give.length,botGives=o.recv.length;
+  const accept=Math.random()<(botGets>=botGives?0.65:0.3);
+  setTimeout(()=>{
+    if(accept){
+      const me=G.players[o.from],them=G.players[o.to];
+      o.give.forEach(i=>{G.props[i].own=o.to;them.props.push(i);me.props=me.props.filter(x=>x!==i);});
+      o.recv.forEach(i=>{G.props[i].own=o.from;me.props.push(i);them.props=them.props.filter(x=>x!==i);});
+      if(o.cash>0){me.money+=o.cash;them.money-=o.cash;}
+      addLog(`${them.name}が取引を承諾`);
+      G.msg=`✅ <b>${them.name}</b>が取引を承諾しました！`;
+    }else{
+      addLog(`${G.players[o.to].name}が取引を拒否`);
+      G.msg=`❌ <b>${G.players[o.to].name}</b>が取引を断りました。`;
+    }
+    G.tradeOffer=null;G.cur=o.originalCur;G.ts=o.originalTs;
+    drawBoard();drawSide();updateUI();scheduleBotIfNeeded();
+  },2000);
+}
+// ─── チャット ───
+function renderChat(msgs){
+  const el=$('chatmsgs');if(!el)return;
+  el.innerHTML=msgs.slice(-60).map(m=>`
+    <div class="chatmsg ${m.uid===ME?.uid?'me':'them'}">
+      <span class="chat-name">${m.name}</span>${m.msg}
+    </div>`).join('');
+  el.scrollTop=el.scrollHeight;
+}
+window.doSendChat=async function(){
+  const input=$('chattext');const text=input?.value?.trim();if(!text)return;
+  input.value='';
+  const msg={uid:ME.uid,name:ME.name,msg:text,ts:Date.now()};
+  if(BOT_MODE){localChat.push(msg);renderChat(localChat);return;}
+  await push(ref(db,`rooms/${ROOM}/chat`),msg);
 };
 
 // ─── モーダル ───
