@@ -766,7 +766,6 @@ function runBotTurn(){
     if(toBuy!==null){
       G.props[toBuy].own=G.cur;p.props.push(toBuy);p.money-=B[toBuy].p;
       addLog(`${p.name}が${lab(toBuy)}を取得`);
-      G.buyPassed=[];
     }else{
       if(!G.buyPassed.includes(G.cur))G.buyPassed.push(G.cur);
     }
@@ -940,7 +939,6 @@ window.doBuyPhase=async function(i){
   if(G.props[i].own!==-1||b.p>p.money)return;
   G.props[i].own=pi;p.props.push(i);p.money-=b.p;
   addLog(`${p.name}が${lab(i)}を取得`);
-  G.buyPassed=[];
   G.bpi=(G.bpi||0)+1;
   G.cur=G.bpi%G.players.length;
   G.msg=`<b>${lab(i)}</b>を取得！次は<b>${G.players[G.cur].name}</b>の番です。`;
