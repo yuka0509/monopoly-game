@@ -508,7 +508,7 @@ const B=[
   {id:35,n:'東日本鉄道',t:'railroad',c:'railroad',p:200,r:[25,50,100,200]},
   {id:36,n:'Zeronity 入会特典 Welcome box',t:'chance',c:'none',p:-5,r:[0]},
   {id:37,n:'富士山観光',t:'prop',c:'blue',p:350,r:[35,175,500,1100,1300,1500]},
-  {id:38,n:'固定資産税',t:'tax',c:'none',p:100,r:[0]},
+  {id:38,n:'固定資産税',t:'tax',c:'none',p:150,r:[0]},
   {id:39,n:'AI基盤モデル',t:'prop',c:'blue',p:400,r:[50,200,600,1400,1700,2000]},
 ];
 const CG={brown:[1,3],lb:[6,8,9],pink:[11,13,14],orange:[16,18,19],
@@ -855,7 +855,7 @@ function runBotTurn(){
 function botLand(pi,pos){
   const p=G.players[pi],cell=B[pos],pr=G.props[pos];
   if(cell.t==='go'){p.money+=0;G.ts='done';}// GO通過はroll時処理済み
-  else if(cell.t==='tax'){addLog(`${p.name}税セーフ！`);G.ts='done';}
+  else if(cell.t==='tax'){p.money-=cell.p;addLog(`${p.name} ${cell.n} -${cell.p}万`);chkBust(pi);G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.ts='done';}
   else if(cell.t==='chance'){
@@ -1049,7 +1049,7 @@ window.doRoll=async function(){
 async function doLand(pi,pos){
   const p=G.players[pi],cell=B[pos],pr=G.props[pos];
   if(cell.t==='go'){G.msg='GO！<b>+2000万円</b>受取。';G.ts='done';}
-  else if(cell.t==='tax'){G.msg=`✅ <b>${lab(pos)}</b>！支払いなし！セーフ！`;G.ts='done';}
+  else if(cell.t==='tax'){p.money-=cell.p;G.msg=`💸 <b>${lab(pos)}</b>！<span class="neg">-${cell.p}万円</span>`;chkBust(pi);G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.msg='⛓ 刑務所へ！';G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.msg=`${lab(pos)}。通過。`;G.ts='done';}
   else if(cell.t==='chance'){
