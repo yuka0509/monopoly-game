@@ -123,10 +123,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 /* ── GAME ── */
 #ghdr{padding:10px 16px;background:var(--s1);border-bottom:1px solid var(--border);
   display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-#glayout{display:grid;grid-template-columns:1fr 260px;flex:1;min-height:0;overflow:hidden}
-#board-col{padding:16px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
+#glayout{display:grid;grid-template-columns:1fr 220px;flex:1;min-height:0;overflow:hidden}
+#board-col{padding:12px;overflow:auto;display:flex;justify-content:center;align-items:flex-start;
   background:var(--bg)}
-#board-wrap{width:100%;max-width:1100px}
+#board-wrap{width:100%}
 #board{display:grid;grid-template-columns:repeat(11,1fr);grid-template-rows:repeat(11,1fr);
   gap:2px;background:var(--border);border-radius:8px;overflow:hidden;aspect-ratio:1;width:100%}
 .cell{background:var(--s1);display:flex;flex-direction:column;align-items:center;
@@ -217,9 +217,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 /* ── CELL RENT TABLE ── */
 .crt{width:100%;margin-top:1px;border-top:0.5px solid rgba(255,255,255,0.1)}
-.crth{display:flex;justify-content:space-between;padding:0 3px;font-size:6px;color:var(--text3);line-height:1.4}
-.crtr{display:flex;justify-content:space-between;padding:0 3px;font-size:8px;color:var(--text2);line-height:1.4}
-.crtr.act{color:var(--accent);font-weight:700}
+.crt-hd{font-size:8px;color:var(--text2);text-align:center;padding:0 3px;line-height:1.35}
+.crt-g{display:grid;grid-template-columns:1fr 1fr;width:100%;padding:0 2px;gap:0}
+.crt-v{font-size:8px;color:var(--text2);text-align:center;line-height:1.25;overflow:hidden;white-space:nowrap}
+.crt-v.act{color:var(--accent);font-weight:700}
 
 /* ── WAITING / NOT MY TURN ── */
 .waiting-overlay{text-align:center;padding:12px 8px;color:var(--text2);font-size:12px}
@@ -707,13 +708,15 @@ const BOT_NAMES=['田中AI','鈴木BOT','佐藤AI'];
 let BOT_MODE=false;
 
 window.startBotGame=function(){
-  // インラインUIで表示（moduleスコープ問題を回避）
   const overlay = document.getElementById('bot-select-overlay');
+  const nameInput = document.getElementById('bot-player-name');
+  if(nameInput && ME) nameInput.value = ME.name || '';
   if(overlay) overlay.style.display='flex';
 };
 
 // カスタムイベントでmodule外から呼ばれる
 document.addEventListener('launch-bot',function(e){
+  if(e.detail.playerName) ME.name=e.detail.playerName;
   window.launchBotGame(e.detail.count);
 });
 
@@ -1142,15 +1145,15 @@ function drawBoard(){
       in2+=`<div class="cn">${lab(idx)}</div><div class="cp">${cell.p}万</div>`;
       if(cell.t==='prop'){
         const bc=Math.floor(cell.p/2);
-        in2+='<div class="crt"><div class="crth"><span></span><span>費用</span><span>家賃</span></div>';
-        ['1','2','3','4','H'].forEach((lbl,i)=>{const lv=i+1;in2+=`<div class="crtr${pr.h===lv?' act':''}"><span>${lbl}件</span><span>${bc*lv}万</span><span>${cell.r[lv]}万</span></div>`;});
-        in2+='</div>';
+        in2+=`<div class="crt"><div class="crt-hd">投資 ${bc}万/件</div><div class="crt-g">`;
+        ['1','2','3','4','H'].forEach((lbl,i)=>{const lv=i+1;in2+=`<div class="crt-v${pr.h===lv?' act':''}">${lbl}:${cell.r[lv]}万</div>`;});
+        in2+='</div></div>';
       }else if(cell.t==='railroad'){
-        in2+='<div class="crt">';
-        for(let lv=0;lv<4;lv++)in2+=`<div class="crtr"><span>${lv+1}駅</span><span>${cell.r[lv]}万</span></div>`;
-        in2+='</div>';
+        in2+='<div class="crt"><div class="crt-g">';
+        for(let lv=0;lv<4;lv++)in2+=`<div class="crt-v">${lv+1}駅:${cell.r[lv]}万</div>`;
+        in2+='</div></div>';
       }else if(cell.t==='utility'){
-        in2+='<div class="crt"><div class="crtr"><span>1社</span><span>目×40</span></div><div class="crtr"><span>2社</span><span>目×100</span></div></div>';
+        in2+='<div class="crt"><div class="crt-g"><div class="crt-v">1社:×40</div><div class="crt-v">2社:×100</div></div></div>';
       }
       if(pr.h>0){in2+='<div class="ivd">';if(pr.h===5)in2+=`<div class="ip ht"></div>`;else for(let x=0;x<pr.h;x++)in2+=`<div class="ip h"></div>`;in2+='</div>';}
     }
@@ -1187,20 +1190,15 @@ function swTab(id,btn){
 document.addEventListener('DOMContentLoaded',function(){
   const overlay = document.getElementById('bot-select-overlay');
   function closeBotOverlay(){ overlay.style.display='none'; }
-
-  document.getElementById('bot-btn-1').addEventListener('click',function(){
+  function launchWithCount(count){
+    const nameInput = document.getElementById('bot-player-name');
+    const playerName = nameInput ? nameInput.value.trim() : '';
     closeBotOverlay();
-    // moduleスコープのlaunchBotGameをカスタムイベント経由で呼ぶ
-    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:1}}));
-  });
-  document.getElementById('bot-btn-2').addEventListener('click',function(){
-    closeBotOverlay();
-    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:2}}));
-  });
-  document.getElementById('bot-btn-3').addEventListener('click',function(){
-    closeBotOverlay();
-    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count:3}}));
-  });
+    document.dispatchEvent(new CustomEvent('launch-bot',{detail:{count, playerName}}));
+  }
+  document.getElementById('bot-btn-1').addEventListener('click',()=>launchWithCount(1));
+  document.getElementById('bot-btn-2').addEventListener('click',()=>launchWithCount(2));
+  document.getElementById('bot-btn-3').addEventListener('click',()=>launchWithCount(3));
   document.getElementById('bot-btn-cancel').addEventListener('click',closeBotOverlay);
 });
 </script>
@@ -1208,7 +1206,11 @@ document.addEventListener('DOMContentLoaded',function(){
 <div id="bot-select-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:20px">
   <div style="background:#111218;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px;width:100%;max-width:320px">
     <div style="font-family:Syne,sans-serif;font-size:17px;font-weight:800;margin-bottom:6px">🤖 ボットと対戦</div>
-    <div style="font-size:12px;color:#6b7299;margin-bottom:16px">ボットの人数を選んでください</div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;font-weight:700;color:#6b7299;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:6px">あなたの名前</label>
+      <input id="bot-player-name" type="text" placeholder="表示名を入力" maxlength="20" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:#1f2133;color:#eef0ff;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;box-sizing:border-box">
+    </div>
+    <div style="font-size:12px;color:#6b7299;margin-bottom:12px">ボットの人数を選んでください</div>
     <div style="display:flex;flex-direction:column;gap:8px">
       <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-1">ボット1人（合計2人）</button>
       <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-2">ボット2人（合計3人）</button>
