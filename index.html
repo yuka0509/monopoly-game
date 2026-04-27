@@ -969,8 +969,8 @@ function updateUI(){
   }else if(G.phase==='negotiate'){
     if(G.ts==='trade_offer'){renderTradeOfferUI();return;}
     if(BOT_MODE) G.cur=G.players.findIndex(p=>!p.isBot&&!p.bust);
-    setMsg('全員で自由に交渉・取引ができます。同一色を揃えると投資が可能です。');
-    setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn amber" onclick="openMort()">🔒 抵当</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
+    if(G.msg)setMsg(G.msg);
+    setAbtn(`<button class="btn ghost" onclick="openTrd()">🤝 取引する</button><button class="btn cta" onclick="doStartPlay()">ゲーム開始 →</button>`);
   }
 }
 
