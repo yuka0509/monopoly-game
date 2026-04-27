@@ -166,6 +166,12 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .pcard-s{font-size:9px;color:var(--text2);margin-top:2px}
 .pcard-m{font-family:'Space Mono',monospace;font-size:17px;font-weight:700;margin-top:5px;line-height:1}
 .pcard-m span{font-size:10px;font-weight:400;color:var(--text2)}
+#proplist{padding:8px 10px;border-bottom:1px solid var(--border);overflow-y:auto;max-height:200px;flex-shrink:0}
+.pown{margin-bottom:6px}
+.pown-hd{font-size:9px;font-weight:700;margin-bottom:3px}
+.pown-chips{display:flex;flex-wrap:wrap;gap:3px}
+.pown-chip{font-size:7.5px;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:2px 4px;display:flex;align-items:center;gap:2px;color:var(--text);line-height:1.3}
+.pown-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 #ap{flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto}
 .alb{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
 #amsg{font-size:12px;line-height:1.6;padding:10px;background:var(--s2);
@@ -392,6 +398,10 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
       <div id="pp">
         <div class="alb" style="margin-bottom:6px">プレイヤー</div>
         <div id="pcards"></div>
+      </div>
+      <div id="proplist">
+        <div class="alb" style="margin-bottom:4px">所有事業</div>
+        <div id="propown"></div>
       </div>
       <div id="ap">
         <div class="alb">アクション</div>
@@ -1143,29 +1153,35 @@ window.openTrd=function(){
   }));
 };
 window.openTrdWith=function(ti){
-  window._ts={give:-1,recv:-1};
+  window._ts={give:[],recv:[]};
   const mp=G.players[G.cur].props,tp=G.players[ti].props;
-  const pb=(i,side)=>`<div class="pbtn" onclick="selT('${side}',${i},this)">
+  const pb=(i,side)=>`<div class="pbtn" data-tside="${side}" onclick="selT('${side}',${i},this)">
     <span class="pdt" style="background:${CMAP[B[i].c]}"></span>${lab(i)}<br>
     <span style="font-size:9px;color:var(--text2)">${B[i].p}万</span></div>`;
   $('mt').textContent=`${G.players[ti].name}と取引`;
   $('mb').innerHTML=`
+    <div style="font-size:9px;color:var(--text3);margin-bottom:6px">事業は複数選択できます</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
       <div><div style="font-size:9px;color:var(--text2);margin-bottom:4px">渡す事業</div>
-        <div class="pgrid">${mp.map(i=>pb(i,'give')).join('')}<div class="pbtn" onclick="selT('give',-1,this)">なし</div></div></div>
+        <div class="pgrid">${mp.length?mp.map(i=>pb(i,'give')).join(''):'<div style="font-size:9px;color:var(--text3)">なし</div>'}</div></div>
       <div><div style="font-size:9px;color:var(--text2);margin-bottom:4px">受取る事業</div>
-        <div class="pgrid">${tp.map(i=>pb(i,'recv')).join('')}<div class="pbtn" onclick="selT('recv',-1,this)">なし</div></div></div>
+        <div class="pgrid">${tp.length?tp.map(i=>pb(i,'recv')).join(''):'<div style="font-size:9px;color:var(--text3)">なし</div>'}</div></div>
     </div>
     <div class="crow"><span>現金差額:</span><input type="number" id="tcash" value="0" step="100" min="0">万円</div>`;
   $('mbtns').innerHTML=`<button class="btn cta" onclick="execTrd(${ti})">取引実行</button><button class="btn ghost" onclick="hideModal()">キャンセル</button>`;
   $('mw').classList.add('on');
 }
-window.selT=function(side,i,el){document.querySelectorAll(`[onclick*="selT('${side}'"]`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');window._ts[side]=i;};
+window.selT=function(side,i,el){
+  const arr=window._ts[side];
+  const idx=arr.indexOf(i);
+  if(idx>=0){arr.splice(idx,1);el.classList.remove('sel');}
+  else{arr.push(i);el.classList.add('sel');}
+};
 window.execTrd=async function(ti){
   const{give,recv}=window._ts,cash=parseInt($('tcash').value)||0;
   const me=G.players[G.cur],them=G.players[ti];
-  if(give!==-1){G.props[give].own=ti;them.props.push(give);me.props=me.props.filter(x=>x!==give);}
-  if(recv!==-1){G.props[recv].own=G.cur;me.props.push(recv);them.props=them.props.filter(x=>x!==recv);}
+  give.forEach(i=>{G.props[i].own=ti;them.props.push(i);me.props=me.props.filter(x=>x!==i);});
+  recv.forEach(i=>{G.props[i].own=G.cur;me.props.push(i);them.props=them.props.filter(x=>x!==i);});
   if(cash>0){me.money+=cash;them.money-=cash;}
   addLog(`${me.name}↔${them.name}取引`);G.msg='✅ 取引完了！';hideModal();await save();
 };
@@ -1256,6 +1272,14 @@ function drawSide(){
       </div>
       <div class="pcard-m">${p.money.toLocaleString()}<span>万円</span></div>
     </div>`).join('');
+  const po=$('propown');if(!po)return;
+  po.innerHTML=G.players.map((p,pi)=>{
+    if(p.bust)return'';
+    const chips=p.props.length
+      ?p.props.map(i=>`<div class="pown-chip"><div class="pown-dot" style="background:${CMAP[B[i].c]}"></div>${B[i].n}</div>`).join('')
+      :`<div style="font-size:8px;color:var(--text3)">なし</div>`;
+    return`<div class="pown"><div class="pown-hd" style="color:${p.color}">${p.name}</div><div class="pown-chips">${chips}</div></div>`;
+  }).join('');
 }
 </script>
 
