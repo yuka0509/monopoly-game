@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#08090f;--s1:#111218;--s2:#181a24;--s3:#1f2133;
-  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
-  --accent:#00f5a0;--accent-dim:rgba(0,245,160,0.12);--accent-glow:rgba(0,245,160,0.25);
-  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
-  --red:#f87171;--red-dim:rgba(248,113,113,0.12);
-  --amber:#fbbf24;--amber-dim:rgba(251,191,36,0.12);
-  --text:#eef0ff;--text2:#6b7299;--text3:#3d4266;
-  --brown:#c07850;--lb:#34d399;--pink:#f472b6;--orange:#fb923c;
-  --color-red:#f87171;--yellow:#f59e0b;--green:#4ade80;--blue:#60a5fa;
-  --rail:#94a3b8;--util:#a78bfa;
+  --bg:#ffffff;--s1:#f5f7fa;--s2:#edf0f5;--s3:#e1e5ed;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.16);
+  --accent:#059669;--accent-dim:rgba(5,150,105,0.12);--accent-glow:rgba(5,150,105,0.2);
+  --purple:#7c3aed;--purple-dim:rgba(124,58,237,0.1);
+  --red:#dc2626;--red-dim:rgba(220,38,38,0.1);
+  --amber:#d97706;--amber-dim:rgba(217,119,6,0.1);
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --brown:#c07850;--lb:#059669;--pink:#db2777;--orange:#ea580c;
+  --color-red:#dc2626;--yellow:#d97706;--green:#059669;--blue:#2563eb;
+  --rail:#64748b;--util:#7c3aed;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
@@ -25,7 +25,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .view{display:none;min-height:100vh}
 .view.active{display:flex}
 #v-auth{align-items:center;justify-content:center;padding:20px;
-  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,245,160,0.06) 0%,transparent 70%)}
+  background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(5,150,105,0.06) 0%,transparent 70%)}
 #v-lobby{flex-direction:column}
 #v-room{align-items:center;justify-content:center;padding:20px}
 #v-game{flex-direction:column;height:100vh}
@@ -59,8 +59,8 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
   font-family:'Noto Sans JP',sans-serif;border-radius:10px;cursor:pointer;
   text-align:center;transition:all 0.15s;border:1px solid transparent;display:block}
 .btn:active{transform:scale(0.97)}
-.btn.cta{background:linear-gradient(135deg,var(--accent),#00c87a);
-  color:#041a10;border-color:transparent;box-shadow:0 4px 20px var(--accent-glow)}
+.btn.cta{background:linear-gradient(135deg,var(--accent),#047857);
+  color:#ffffff;border-color:transparent;box-shadow:0 4px 20px var(--accent-glow)}
 .btn.cta:hover{filter:brightness(1.08);box-shadow:0 6px 28px var(--accent-glow)}
 .btn.ghost{background:var(--s2);color:var(--text);border-color:var(--border2)}
 .btn.ghost:hover{border-color:var(--border2);background:var(--s3)}
@@ -68,7 +68,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .btn.danger{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3)}
 .xs{display:inline-flex;align-items:center;padding:5px 11px;font-size:11px;font-weight:700;
   font-family:'Noto Sans JP',sans-serif;border-radius:7px;border:1px solid transparent;cursor:pointer;white-space:nowrap}
-.xs.cta{background:var(--accent);color:#041a10}
+.xs.cta{background:var(--accent);color:#ffffff}
 .xs.ghost{background:var(--s3);color:var(--text);border-color:var(--border)}
 .xs.danger{background:var(--red-dim);color:var(--red);border-color:rgba(248,113,113,0.3)}
 .xs.pur{background:var(--purple-dim);color:var(--purple);border-color:rgba(167,139,250,0.3)}
@@ -132,7 +132,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cell{background:var(--s1);display:flex;flex-direction:column;align-items:center;
   justify-content:center;position:relative;overflow:hidden;transition:background 0.1s}
 .cell.mid{background:var(--bg)}
-.cell.here{background:rgba(0,245,160,0.07)!important}
+.cell.here{background:rgba(5,150,105,0.12)!important}
 .ci{display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;width:100%;height:100%;position:relative;z-index:1}
 .cn{font-size:11px;font-weight:600;color:var(--text);line-height:1.2;text-align:center;padding:0 3px}
@@ -142,7 +142,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 .cs.b{bottom:0;left:0;right:0;height:11px}
 .cs.l{left:0;top:0;bottom:0;width:11px}
 .cs.r{right:0;top:0;bottom:0;width:11px}
-.om{position:absolute;top:5px;left:4px;width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.4)}
+.om{position:absolute;top:5px;left:4px;width:12px;height:12px;border-radius:50%;border:1.5px solid rgba(0,0,0,0.25)}
 .ivd{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;margin-top:2px}
 .ip{width:9px;height:9px;border-radius:1.5px}
 .ip.h{background:var(--accent)}
@@ -158,7 +158,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 #pp{padding:10px;border-bottom:1px solid var(--border);flex-shrink:0}
 #pcards{display:flex;flex-direction:column;gap:4px}
 .pcard{border-radius:9px;padding:8px 10px;border:1px solid var(--border);background:var(--s2);transition:all 0.15s}
-.pcard.on{border-color:var(--accent);background:rgba(0,245,160,0.05);
+.pcard.on{border-color:var(--accent);background:rgba(5,150,105,0.08);
   box-shadow:0 0 0 1px var(--accent-glow)}
 .pcard.bust{opacity:0.3}
 .pcard-t{display:flex;align-items:center;gap:7px}
@@ -182,7 +182,7 @@ body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text
 
 /* ── CHIP ── */
 .chip{font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;letter-spacing:0.04em}
-.chip.buy{background:rgba(0,245,160,0.12);color:var(--accent);border:1px solid var(--accent-glow)}
+.chip.buy{background:rgba(5,150,105,0.12);color:var(--accent);border:1px solid var(--accent-glow)}
 .chip.play{background:var(--purple-dim);color:var(--purple);border:1px solid rgba(167,139,250,0.3)}
 .chip.neg{background:var(--amber-dim);color:var(--amber);border:1px solid rgba(251,191,36,0.3)}
 
@@ -1211,17 +1211,17 @@ document.addEventListener('DOMContentLoaded',function(){
 </script>
 <!-- ボット人数選択オーバーレイ（module外で動作） -->
 <div id="bot-select-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(6px);z-index:10000;align-items:center;justify-content:center;padding:20px">
-  <div style="background:#111218;border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:24px;width:100%;max-width:320px">
-    <div style="font-family:Syne,sans-serif;font-size:17px;font-weight:800;margin-bottom:6px">🤖 ボットと対戦</div>
+  <div style="background:var(--s1);border:1px solid var(--border2);border-radius:14px;padding:24px;width:100%;max-width:320px">
+    <div style="font-family:Syne,sans-serif;font-size:17px;font-weight:800;margin-bottom:6px;color:var(--text)">🤖 ボットと対戦</div>
     <div style="margin-bottom:14px">
-      <label style="font-size:11px;font-weight:700;color:#6b7299;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:6px">あなたの名前</label>
-      <input id="bot-player-name" type="text" placeholder="表示名を入力" maxlength="20" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);background:#1f2133;color:#eef0ff;font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;box-sizing:border-box">
+      <label style="font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:6px">あなたの名前</label>
+      <input id="bot-player-name" type="text" placeholder="表示名を入力" maxlength="20" style="width:100%;padding:9px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--s2);color:var(--text);font-size:13px;font-family:'Noto Sans JP',sans-serif;outline:none;box-sizing:border-box">
     </div>
-    <div style="font-size:12px;color:#6b7299;margin-bottom:12px">ボットの人数を選んでください</div>
+    <div style="font-size:12px;color:var(--text2);margin-bottom:12px">ボットの人数を選んでください</div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-1">ボット1人（合計2人）</button>
-      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-2">ボット2人（合計3人）</button>
-      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:#1f2133;color:#eef0ff;border:1px solid rgba(255,255,255,0.12)" id="bot-btn-3">ボット3人（合計4人）</button>
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:var(--s2);color:var(--text);border:1px solid var(--border2)" id="bot-btn-1">ボット1人（合計2人）</button>
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:var(--s2);color:var(--text);border:1px solid var(--border2)" id="bot-btn-2">ボット2人（合計3人）</button>
+      <button style="width:100%;padding:11px;font-size:13px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:var(--s2);color:var(--text);border:1px solid var(--border2)" id="bot-btn-3">ボット3人（合計4人）</button>
       <button style="width:100%;padding:11px;font-size:12px;font-weight:700;font-family:Noto Sans JP,sans-serif;border-radius:10px;cursor:pointer;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)" id="bot-btn-cancel">キャンセル</button>
     </div>
   </div>
