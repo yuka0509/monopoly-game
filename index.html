@@ -1370,8 +1370,12 @@ function renderChat(msgs){
   el.scrollTop=el.scrollHeight;
 }
 window.doSendChat=async function(){
-  const input=$('chattext');const text=input?.value?.trim();if(!text)return;
+  const input=document.getElementById('chattext');
+  if(!input)return;
+  const text=input.value.trim();
   input.value='';
+  input.focus();
+  if(!text)return;
   const msg={uid:ME.uid,name:ME.name,msg:text,ts:Date.now()};
   if(BOT_MODE){localChat.push(msg);renderChat(localChat);return;}
   await push(ref(db,`rooms/${ROOM}/chat`),msg);
