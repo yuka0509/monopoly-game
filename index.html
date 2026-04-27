@@ -489,22 +489,22 @@ const B=[
 const CG={brown:[1,3],lb:[6,8,9],pink:[11,13,14],orange:[16,18,19],
   red:[21,23,24],yellow:[26,27,29],green:[31,32,34],blue:[37,39]};
 const CHANCE=[
-  {tx:'スタートアップ補助金！',fn:p=>{p.money+=1500;return'<b>+1500万</b>受取'}},
-  {tx:'競合に顧客を奪われた！',fn:p=>{p.money-=500;return'<span class="neg">-500万</span>'}},
-  {tx:'投資家から追加出資！',fn:p=>{p.money+=1000;return'<b>+1000万</b>受取'}},
-  {tx:'法律問題が発生。',fn:p=>{p.money-=800;return'<span class="neg">-800万</span>'}},
-  {tx:'製品がバイラル！',fn:p=>{p.money+=2000;return'<b>+2000万</b>受取'}},
-  {tx:'サーバー障害が発生。',fn:p=>{p.money-=600;return'<span class="neg">-600万</span>'}},
-  {tx:'GOへ進め！',fn:p=>{p.pos=0;p.money+=2000;return'GOへ移動 <b>+2000万</b>'}},
-  {tx:'新聞に特集！次の家賃受取2倍',fn:p=>{p.b2x=true;return'次ターン家賃<b>2倍</b>'}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
 ];
 const COMM=[
-  {tx:'銀行エラー',fn:p=>{p.money+=2000;return'<b>+2000万</b>'}},
-  {tx:'医療費',fn:p=>{p.money-=1500;return'<span class="neg">-1500万</span>'}},
-  {tx:'配当収入',fn:p=>{p.money+=1000;return'<b>+1000万</b>'}},
-  {tx:'助成金受取',fn:p=>{p.money+=500;return'<b>+500万</b>'}},
-  {tx:'修繕費',fn:p=>{p.money-=2000;return'<span class="neg">-2000万</span>'}},
-  {tx:'クラウドファンディング成功',fn:p=>{p.money+=1200;return'<b>+1200万</b>'}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
+  {tx:'支払いなし！セーフ！',fn:p=>{}},
 ];
 const DF=['','⚀','⚁','⚂','⚃','⚄','⚅'];
 
@@ -814,11 +814,11 @@ function runBotTurn(){
 function botLand(pi,pos){
   const p=G.players[pi],cell=B[pos],pr=G.props[pos];
   if(cell.t==='go'){p.money+=0;G.ts='done';}// GO通過はroll時処理済み
-  else if(cell.t==='tax'){p.money-=cell.p;addLog(`${p.name}税${cell.p}万`);chkBust(pi);G.ts='done';}
+  else if(cell.t==='tax'){addLog(`${p.name}税セーフ！`);G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.ts='done';}
-  else if(cell.t==='chance'){const c=CHANCE[Math.floor(Math.random()*CHANCE.length)];c.fn(p);addLog(`${p.name}チャンス`);chkBust(pi);G.ts='done';}
-  else if(cell.t==='community'){const c=COMM[Math.floor(Math.random()*COMM.length)];c.fn(p);addLog(`${p.name}共同基金`);chkBust(pi);G.ts='done';}
+  else if(cell.t==='chance'){addLog(`${p.name}チャンス：セーフ！`);G.ts='done';}
+  else if(cell.t==='community'){addLog(`${p.name}共同基金：セーフ！`);G.ts='done';}
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){
       // ボットは買える場合70%の確率で購入
@@ -991,11 +991,11 @@ window.doRoll=async function(){
 async function doLand(pi,pos){
   const p=G.players[pi],cell=B[pos],pr=G.props[pos];
   if(cell.t==='go'){G.msg='GO！<b>+2000万円</b>受取。';G.ts='done';}
-  else if(cell.t==='tax'){p.money-=cell.p;G.msg=`💸 <b>${lab(pos)}</b>！<span class="neg">-${cell.p}万円</span>`;chkBust(pi);G.ts='done';}
+  else if(cell.t==='tax'){G.msg=`✅ <b>${lab(pos)}</b>！支払いなし！セーフ！`;G.ts='done';}
   else if(cell.t==='gotojail'){p.pos=10;p.jail=true;p.jt=0;G.msg='⛓ 刑務所へ！';G.ts='done';}
   else if(cell.t==='jail'||cell.t==='parking'){G.msg=`${lab(pos)}。通過。`;G.ts='done';}
-  else if(cell.t==='chance'){const c=CHANCE[Math.floor(Math.random()*CHANCE.length)];const r=c.fn(p);G.msg=`🎴 チャンス！<br>${c.tx}<br>${r}`;chkBust(pi);G.ts='done';}
-  else if(cell.t==='community'){const c=COMM[Math.floor(Math.random()*COMM.length)];const r=c.fn(p);G.msg=`📋 共同基金！<br>${c.tx}<br>${r}`;chkBust(pi);G.ts='done';}
+  else if(cell.t==='chance'){G.msg=`🎴 チャンス！<br>支払いなし！セーフ！`;G.ts='done';}
+  else if(cell.t==='community'){G.msg=`📋 共同基金！<br>支払いなし！セーフ！`;G.ts='done';}
   else if(cell.t==='prop'||cell.t==='railroad'||cell.t==='utility'){
     if(pr.own===-1){G.ts='buy_prop';G.pb=pos;G.msg=`📌 <b>${lab(pos)}</b>は空き！取得 ${cell.p}万円`;}
     else if(pr.own===pi){G.msg=`自分の事業。`;G.ts='done';}
